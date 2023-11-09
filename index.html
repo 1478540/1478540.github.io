@@ -116,7 +116,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-count">3</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -134,6 +134,149 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/08/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%80%EF%BC%89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Sparkle">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sparkle's Space">
+      <meta itemprop="description" content="If there is no torchlight in the future, I will be the only light.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | Sparkle's Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2023/11/08/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%80%EF%BC%89/" class="post-title-link" itemprop="url">自制简易操作系统（一）</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2023-11-08 15:08:46" itemprop="dateCreated datePublished" datetime="2023-11-08T15:08:46+08:00">2023-11-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2023-11-09 15:06:51" itemprop="dateModified" datetime="2023-11-09T15:06:51+08:00">2023-11-09</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>本系列记录我跟随<code>《操作系统真象还原》</code>制作一个简易的操作系统的全过程</p>
+<h1 id="安装VMware"><a href="#安装VMware" class="headerlink" title="安装VMware"></a>安装VMware</h1><p>VMware是一款可以帮你轻松建立并管理虚拟机的工具。<code>操作系统真象还原</code>推荐使用虚拟机管理工具virtualBox，但由于我之前使用过VMware所以选择继续使用VMware</p>
+<p>VMware的许可证密钥可以在网上轻松获得</p>
+<p>具体的安装步骤请参照<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1M94y1U7nc/?spm_id_from=333.1007.top_right_bar_window_history.content.click&vd_source=ed3f2c04c40cfc2a1c4f1c34717b21df">八分钟完成VMware和ubuntu系统安装</a>的前半部分</p>
+<h1 id="安装Ubuntu"><a href="#安装Ubuntu" class="headerlink" title="安装Ubuntu"></a>安装Ubuntu</h1><p>Ubuntu是以Linux为内核的操作系统，也是我们将来要自制简易操作系统的环境。<code>操作系统真象还原</code>推荐虚拟机安装Centos操作系统（二者都是Linux内核，听说Centos7会有些问题所以选择Ubuntu）</p>
+<p>其中我的虚拟机设置是：2*2核、40G硬盘、2G内存；Ubuntu版本是20.04.6（兼容gcc 4）</p>
+<p>具体的安装步骤请参照<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1M94y1U7nc/?spm_id_from=333.1007.top_right_bar_window_history.content.click&vd_source=ed3f2c04c40cfc2a1c4f1c34717b21df">八分钟完成VMware和ubuntu系统安装</a>的后半部分</p>
+<p><strong>PS：从安装完Ubuntu后应该在执行每一个重要的步骤前给虚拟机拍一个快照，如果执行出错了，我们就可以回到快照处，保证虚拟机的正确性</strong><br><strong>安装Ubuntu时Language选项请选择英语，可以省去很多后续麻烦</strong></p>
+<h1 id="安装VMware-Tool"><a href="#安装VMware-Tool" class="headerlink" title="安装VMware Tool"></a>安装VMware Tool</h1><p>VMware Tool可以实现主机和虚拟机之间拖拽传输文件以及通用复制粘贴，大大简化两机之间的交互难度</p>
+<p>具体安装步骤请参照该<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1YA411k7Lm/?spm_id_from=333.880.my_history.page.click&vd_source=ed3f2c04c40cfc2a1c4f1c34717b21df">VMwareTools安装教程</a></p>
+<p>如果在执行第二步Ubuntu时不是自定义安装而是简易安装，就有可能会遇到一个问题：ubuntu安装VMware-tools时，虚拟机中的选项是灰色的，点击不了。那么请参考<a target="_blank" rel="noopener" href="https://blog.csdn.net/zhvngchvng/article/details/108603053">ubuntu安装VMware-tools时，虚拟机中的选项是灰色的，点击不了</a></p>
+<p><strong>PS：有的虚拟机安装完操作系统就自带安装VMware Tool了，请安装完Ubuntu看看虚拟机菜单，如果选项是’重新安装BMware Tool’就代表已经按照完毕</strong></p>
+<h1 id="安装Bochs"><a href="#安装Bochs" class="headerlink" title="安装Bochs"></a>安装Bochs</h1><p>Bochs是一个x86硬件平台的开源模拟器，它可以模拟各种硬件的配置。Bochs模拟的是整个PC平台，包括I&#x2F;O设备、内存和BIOS，某种程度上来说Bochs也是一个虚拟机，我们未来就是要在Bochs上实现操作系统的制作。</p>
+<p>我安装的是Bochs2.6.8，Bochs的具体安装步骤请参考<a target="_blank" rel="noopener" href="https://love6.blog.csdn.net/article/details/117751327">《操作系统真象还原》第一章 —- 安装Vmware Station 安装Ubuntu 装载配置Bochs 安装Vmware tools 开始乘帆历险！</a>上半部分。</p>
+<p>Bochs的下载我们可以在主机上下载完压缩包后再直接复制到虚拟机里</p>
+<p>在解压后的文件夹下打开终端并输入命令</p>
+<pre><code>./configure \
+--prefix=/home/sparkle2/bochs \
+--enable-debugger \
+--enable-disasm \
+--enable-iodebug \
+--enable-x86-debugger \
+LIBS=&#39;-lX11&#39; \
+--with-x \
+--with-x11
+
+#上面的代码中，prefix指定的是安装bochs的路径
+#LIBS这一行是原书上没有的，是我遇到第四个报错后查阅资料添加的
+#除了最后一句命令外每一句结尾都是&#39; \&#39;代表着命令还未输入完，运行换行继续输入
+</code></pre>
+<p>等到上述命令得以正确执行后，还需要在Bochs的解压目录下执行两条命令：</p>
+<pre><code>make
+make install
+</code></pre>
+<p>Bochs就安装成功了，我们可以在指定路径下看到安装后的bochs文件夹</p>
+<p>整个安装过程中我遇到了四个报错</p>
+<ol>
+<li>缺少C编译器</li>
+<li>C++ preprocessor fails sanity check</li>
+<li>“ERROR: X windows gui was selected, but X windows libraries were not found.</li>
+<li>undefined reference to symbol ‘XSetForeground’</li>
+</ol>
+<p>其中前两个报错在上述文章中都已解决，第三个报错请参照<a target="_blank" rel="noopener" href="https://blog.csdn.net/geeker_12/article/details/11409009">Ubuntu下安装Bochs各种奇怪错误汇总</a>，第四个报错请参考文章<a target="_blank" rel="noopener" href="https://blog.csdn.net/cloudblaze/article/details/52752912">[乱七八糟]bochs编译错误之’XSetForeground’</a></p>
+<p><strong>PS:在使用apt命令更新或下载一些东西时，有时候需要换源，在etc&#x2F;apt&#x2F;source.list文件中把下载源改为中国地区,否则会出现下载慢下载失败等问题</strong></p>
+<h1 id="配置Bochs"><a href="#配置Bochs" class="headerlink" title="配置Bochs"></a>配置Bochs</h1><p>配置Bochs请参照<a target="_blank" rel="noopener" href="https://love6.blog.csdn.net/article/details/117751327">《操作系统真象还原》第一章 —- 安装Vmware Station 安装Ubuntu 装载配置Bochs 安装Vmware tools 开始乘帆历险！</a>下半部分</p>
+<p>我的配置文件如下：</p>
+<pre><code>megs: 32
+# megs书本是32，博客是512，我跟着书本走
+
+romimage: file=/home/sparkle2/bochs/share/bochs/BIOS-bochs-latest
+vgaromimage: file=/home/sparkle2/bochs/share/bochs/VGABIOS-lgpl-latest
+
+boot: disk
+
+log: bochs.out
+
+mouse:enabled=0
+keyboard:keymap=/home/sparkle2/bochs/share/bochs/keymaps/x11-pc-us.map
+
+ata0:enabled=1,ioaddr1=0x1f0,ioaddr2=0x3f0,irq=14
+
+ata0-master: type=disk, path=&quot;hd60M.img&quot;, mode=flat,cylinders=121,heads=16,spt=63
+#新加入的代码，也就是新建立的虚拟磁盘
+
+# gdbstub:enabled=1,port=1234,text_base=0,data_base=0,bss_base=0
+</code></pre>
+<h1 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h1><p>到此，第一步环境的部署就做完了，第二步就可以开始正式写代码了。</p>
+<p>只是环境部署就用了将近两天时间，期间反复下载了4次虚拟机，长路漫漫。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -171,9 +314,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2023-11-04 22:15:24 / Modified: 23:05:40" itemprop="dateCreated datePublished" datetime="2023-11-04T22:15:24+08:00">2023-11-04</time>
+      <time title="Created: 2023-11-04 22:15:24" itemprop="dateCreated datePublished" datetime="2023-11-04T22:15:24+08:00">2023-11-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2023-11-06 11:19:23" itemprop="dateModified" datetime="2023-11-06T11:19:23+08:00">2023-11-06</time>
     </span>
 
   
@@ -200,7 +349,7 @@
 <li><p>Command Prompt：基于Dos的传统的cmd命令行，cmd不兼容上述控制台，只能用来执行一些基本的命令和批处理文件。</p>
 </li>
 </ul>
-<p>除了上述四个控制台外，还有在调试代码时跳出的争对不同语言不同的控制台，例如：用于调试C++&#x2F;C代码的cppdbg；用于调试python代码的python Debug Console等等，可以在调试代码时，查看终端窗口右上角的小标题来确定你现在使用的是哪一个控制台</p>
+<p>除了上述四个控制台外，还有在调试代码时跳出的针对不同语言不同的控制台，例如：用于调试C++&#x2F;C代码的cppdbg；用于调试python代码的python Debug Console等等，可以在调试代码时，查看终端窗口右上角的小标题来确定你现在使用的是哪一个控制台</p>
 <p>注意：不同的控制台使用的编码是独立不相互影响的，千万不要使用A控制台却去调整B控制台的编码</p>
 <h1 id="VSCode文件编码介绍"><a href="#VSCode文件编码介绍" class="headerlink" title="VSCode文件编码介绍"></a>VSCode文件编码介绍</h1><p>VSCode当前文件编码格式可以查看右下角</p>
 <p><img src="/img/VSCode%E7%BC%96%E7%A0%81%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98/img2.png" alt="img"></p>
@@ -276,9 +425,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2023-11-04 15:23:38 / Modified: 19:47:53" itemprop="dateCreated datePublished" datetime="2023-11-04T15:23:38+08:00">2023-11-04</time>
+      <time title="Created: 2023-11-04 15:23:38" itemprop="dateCreated datePublished" datetime="2023-11-04T15:23:38+08:00">2023-11-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2023-11-06 11:16:01" itemprop="dateModified" datetime="2023-11-06T11:16:01+08:00">2023-11-06</time>
     </span>
 
   
@@ -344,7 +499,7 @@ npm install
 <li><p>使用以下命令配置SSH钥匙：</p>
 <pre><code> git config --global user.name &quot;用户名&quot;
  git config --global user.email &quot;邮箱地址&quot;
- ::之前以及配置过可直接输入第三条命令 
+ ::之前已经配置过可直接输入第三条命令 
  ssh-keygen -t rsa -C &#39;上面的邮箱&#39;
 </code></pre>
 <p> 可在<code>C:\Users\用户名\.ssh\id_rsa.pub</code>文件里查看SSH公钥</p>
@@ -354,7 +509,7 @@ npm install
  ::若返回 Hi xxx! You&#39;ve successfully authenticated, but GitHub does not provide shell access. 内容，则证实添加成功
 </code></pre>
 </li>
-<li><p>登陆 Github 上添加刚刚生成的SSH key,Key的内容<br> <img src="/img/%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E5%88%9B%E5%BB%BA%E6%8C%87%E5%8D%97/picture3.png" alt="img"></p>
+<li><p>登陆Github添加刚刚生成的SSH key，在下图中Key部分处放入SSH公钥内容<br> <img src="/img/%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E5%88%9B%E5%BB%BA%E6%8C%87%E5%8D%97/picture3.png" alt="img"></p>
 </li>
 <li><p>在根目录底下_config.xml文件拉到最底部添加如下配置：</p>
 <pre><code> deploy :
