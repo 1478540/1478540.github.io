@@ -116,7 +116,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-count">6</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -134,6 +134,471 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/11/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Sparkle">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sparkle's Space">
+      <meta itemprop="description" content="If there is no torchlight in the future, I will be the only light.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | Sparkle's Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2023/11/11/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/" class="post-title-link" itemprop="url">自制简易操作系统（四）</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2023-11-11 15:46:38" itemprop="dateCreated datePublished" datetime="2023-11-11T15:46:38+08:00">2023-11-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2023-11-14 20:28:13" itemprop="dateModified" datetime="2023-11-14T20:28:13+08:00">2023-11-14</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>这一章我们学习如何从实模式到保护模式，并编写加载器loader的代码，让他实现将系统从实模式切换到保护模式</p>
+<h1 id="保护模式概述"><a href="#保护模式概述" class="headerlink" title="保护模式概述"></a>保护模式概述</h1><p>保护模式和实模式一样都是指工作状态、工作环境、工作命令等一整个方面的内容。</p>
+<p>一开始是没有实模式、保护模式的概念的。16位CPU时代工作配置都是现有的实模式，但是当时并没有16位实模式的概念。直到人们觉得这种工作方式不安全，在32位CPU时代里推出了新的工作方式。由于32位CPU一定要可以兼容16位CPU的程序，所以为了区分新旧工作模式，引入了实模式（重点是真实的物理地址）、保护模式（重点突出保护）两个概念。</p>
+<p>也就是说现代计算机是可以兼容实模式和保护模式，当然绝大多数时候都是使用保护模式</p>
+<h2 id="为什么要有保护模式-实模式的缺点"><a href="#为什么要有保护模式-实模式的缺点" class="headerlink" title="为什么要有保护模式(实模式的缺点)"></a>为什么要有保护模式(实模式的缺点)</h2><ol>
+<li><p>实模式下用户程序和操作系统同一等级，而且逻辑地址就是物理地址，用户程序可以随意修改段基址访问所有内存，不安全</p>
+</li>
+<li><p>实模式16位寄存器决定访问超过64KB的内存区域要切换段基址、麻烦</p>
+</li>
+<li><p>一次只能运行一个程序，无法充分利用计算机资源</p>
+</li>
+<li><p>只有20条地址线，最大可用内存的寻址范围只有1MB，不够用</p>
+</li>
+</ol>
+<h2 id="保护模式的特点"><a href="#保护模式的特点" class="headerlink" title="保护模式的特点"></a>保护模式的特点</h2><ol>
+<li><p>应用程序只能访问虚拟地址，虚拟地址由处理器和操作系统协作转换后才显示真正的物理地址</p>
+</li>
+<li><p>保护模式的运行环境是32位，寄存器、数据线、地址线也相应都被扩展到32位，指令格式也有了相应的扩展（允许32位源操作数）</p>
+</li>
+<li><p>保护模式不再使用中断向量表、段基址寄存器这些概念。取而代之的是段选择子寄存器、全局描述符、中断描述符表、各种门结构</p>
+</li>
+<li><p>保护模式引入了特权级的概念，应用程序不再和操作系统拥有同一特权级</p>
+</li>
+</ol>
+<h2 id="保护模式的扩展"><a href="#保护模式的扩展" class="headerlink" title="保护模式的扩展"></a>保护模式的扩展</h2><ol>
+<li><p>寄存器扩展：</p>
+<p> <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img1.png" alt="img"></p>
+<p> 保护模式下寄存器、地址线和数据总线都扩展到32位，内存寻址空间可达4GB，段内寻址空间也可达4GB。也就是说对内存的访问甚至可以让段基址&#x3D;0，只由一个记录偏移量的寄存器来访问内存，这也就是所谓的平坦模型</p>
+<p> 另外一提：保护模式抛弃基址这个概念，而是在内存里放入一个全局描述符表，每一个表项都是一个段描述符，用来描述各个内存段的起始地址、大小、权限等信息。段寄存器保护的也不再是段基址了，而是“选择子”，选择子本质上就是全局描述符表中的索引，就像是数组下标一样的东西。</p>
+</li>
+<li><p>寻址扩展：</p>
+<p> <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img2.png" alt="img"></p>
+<p> 如图所示保护模式的寻址方式更加灵活多变，不仅在基址寄存器(所有通用寄存器都可)和变址寄存器(处理esp外的所有通用寄存器都可)有了更多选择外，还引入了比例因子</p>
+</li>
+<li><p>运行模式反转：</p>
+<p> 由于32位CPU兼容保护模式和实模式，所以如果你在保护模式下使用实模式的命令，或者在实模式下使用保护模式的命令，都会触发运行模式反转，将会在二进制机器码前加上相应的反转前缀。</p>
+<p> 注意：模式反转前缀只对单条指令有效，效果并非是全局的</p>
+<pre><code> [bit 16] ;告诉编译器接下来的代码是实模式
+ [bit 32] ;告诉编译器接下来的代码是保护模式
+</code></pre>
+<ul>
+<li><p>操作数反转前缀 0x66</p>
+<p>  <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img3.png" alt="img"></p>
+<p>  如图上半部分是代码，下半部分是编译后的机器指令</p>
+<p>  第三行在[bit 16]实模式下使用了eax，触发了保护模式转换，因此机器码前加了前缀0x66</p>
+<p>  第五行在[bit 32]保护模式下使用了ax，触发了实模式转换，因此机器码前加了前缀0x66</p>
+</li>
+<li><p>寻址方式反转前缀 0x67</p>
+<p>  <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img4.png" alt="img"></p>
+<p>  第四行在[bit 16]实模式下同时使用了保护模式的32位源操作数和更加灵活的寻址方式，触发模式转换，机器码添加了前缀0x66、0x67</p>
+</li>
+</ul>
+</li>
+<li><p>指令扩展</p>
+<p> 指令扩展后允许32位寄存器和32位源操作数</p>
+</li>
+</ol>
+<h1 id="从实模式到保护模式"><a href="#从实模式到保护模式" class="headerlink" title="从实模式到保护模式"></a>从实模式到保护模式</h1><p>从实模式到保护模式我们要执行三个步骤：</p>
+<ol>
+<li>打开A20地址线</li>
+<li>加载GDT</li>
+<li>将CR0的PE位置1</li>
+</ol>
+<p>对于这三个步骤的讲解请看下文</p>
+<h2 id="段描述符"><a href="#段描述符" class="headerlink" title="段描述符"></a>段描述符</h2><p>到了保护模式下，内存段不再是简单用寄存器加载即可用，而是需要提前把段定义好才可使用。全局描述符就是用来存储对每个段描述的表，全局描述符中的每一个表项包含段描述符，段描述符就是对一个段的描述，64位段描述符格式如下：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img5.png" alt="img"></p>
+<ol>
+<li><p>段基址：</p>
+<p> 每个段都有32位的段基址，在段描述符中被拆分成三块存储。</p>
+<p> 为什么被拆分成三块？为的是兼容，实模式下段基址是16位，80286有关短暂的24位段基址，而现在则是32位段基址，为了兼容原本应该连续存放的段基址被拆分为16-8-8的形式。</p>
+<p> 当需要查看段基址时，硬件会把三个分散的段基址取出来并拼接在一起得到一个完整的32位段基址。</p>
+<p> <strong>PS：现在知道为什么有那么多屎山代码了，为了兼容旧时代的程序，屎山代码将成为每一个持续发展产品的最终归宿！</strong></p>
+</li>
+<li><p>段界限：</p>
+<p> 段界限表示段边界的扩展最值，20位段界限被拆分为两部分(当然又是为了兼容)。</p>
+<p> 段界限是一个单位量，单位要么是1字节，要么是4KB(单位由G段决定)。也就是说段的最大寻址范围要么是1*2^20&#x3D;1MB；要么是2*12*2^20&#x3D;4GB。(注意寻址范围!&#x3D;空间)</p>
+<p> 实际的段界限边界值&#x3D;(描述符中段界限+1)*(段界限的粒度大小：4KB&#x2F;1Byte)-1</p>
+</li>
+<li><p>S字段和type字段：</p>
+<p> <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img6.png" alt="img">    </p>
+<p> S字段只有1位：S&#x3D;0 则说明是系统段(凡是硬件允许需要用到的东西，程序入口、调用门之类);S&#x3D;1 则说明是非系统段(凡是软件运行需要的东西，数据、代码、栈都是数据段)</p>
+<p> type字段有4位：type字段只有在S确认后才有意义，X区分代码段和数据段，R代表是否可读，W代表是否可写，C代表是否一致，E代表向上扩展(E&#x3D;0,低地址到高地址)或向下扩展(E&#x3D;1，高地址到低地址)，A代表是否被CPU读过（CPU访问过则置1）</p>
+</li>
+<li><p>DPL（Descriptor Privilege Level）</p>
+<p> 2位的DPL字段表示特权级，特权级从0~3,数字越低特权级越高，操作系统是0级，一般应用程序是3级</p>
+</li>
+<li><p>P字段（Present）：</p>
+<p> 1位P表示段是否存在，有时候内存不够时，保护模式下CPU可能会按页(4KB)的单位将内存换到磁盘里，此时相当于该段不存在，即P&#x3D;0;</p>
+</li>
+<li><p>AVL字段（Avaliable）:</p>
+<p> 1位AVL字段代表该段是否可用，是否可用是对用户来说，对操作系统来说可随意访问此位</p>
+</li>
+<li><p>L字段：</p>
+<p> 1位L字段，L&#x3D;1表示代码段是64位，L&#x3D;0表示代码段是32位，我们在32位地址下编程将其设置为0即可</p>
+</li>
+<li><p>D&#x2F;B字段：</p>
+<p> 1位D&#x2F;B字段指定有效地址及操作数大小，对不同段的意义不同</p>
+<ul>
+<li><p>如果争对代码段，D&#x3D;0时指令中有效地址和操作数是16位，指令有效地址用IP寄存器；D&#x3D;1时指令中有效地址和操作数是32位，指令有效地址用EIP寄存器</p>
+</li>
+<li><p>如果争对栈段，B&#x3D;0时栈使用SP寄存器，栈最大寻址范围为2^16；B&#x3D;1时栈使用ESP寄存器，栈最大寻址范围为2^32</p>
+</li>
+</ul>
+</li>
+<li><p>G段：</p>
+<p> 1位G段用来指定段界限的单位大小，G&#x3D;0时，段界限的单位时1字节；G&#x3D;1时，段界限的单位是4KB</p>
+</li>
+</ol>
+<h2 id="全局描述符号GDT、选择子以及GDTR寄存器"><a href="#全局描述符号GDT、选择子以及GDTR寄存器" class="headerlink" title="全局描述符号GDT、选择子以及GDTR寄存器"></a>全局描述符号GDT、选择子以及GDTR寄存器</h2><ol>
+<li><p>GDT(Global Descriptor Table)相当于是段描述符的数组，每一表项都是一个段描述符</p>
+</li>
+<li><p>选择子是什么？选择子由三部分组成，如下图：</p>
+<p> <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img7.png" alt="img"> </p>
+<p> 0~1位用来存储RPL，即特权级；第2位是TI(Table Indicator)，用来表示选择子是GDT还是LDT的索引；3~5位是描述符的索引值，就是数组下表</p>
+<p> <strong>PS：我们注意到索引一共是13位，也就是说一个GDT最多有2^13&#x3D;8192个表项</strong></p>
+</li>
+<li><p>LDT(Local Descriptor Table)是局部描述符，一个任务对应一个LDT，但它在现实中应用很少，我们的系统中也未用到LDT</p>
+</li>
+<li><p>GDTR(Global Descriptor Table Register)是用来指向GDT的寄存器，GDT存储在内存中，GDTR存储的则是GDT的地址。</p>
+<p> <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img8.png" alt="img"> </p>
+<p> 如图所示是GDTR的结构，48位寄存器前16位是GDT以字节为单位的界限，后32位是GDT在内存中的起始地址</p>
+<p> <strong>GDT界限范围有16位，也就是占有2^16个字节，而一个表项占有8字节，一个GDT一共可以存储2^16&#x2F;8&#x3D;8192个表项，和上面结论相符合</strong></p>
+</li>
+<li><p>ldgt(load Gloabal Descriptor Table)指令用来加载GPT，一般情况下从实模式进入保护模式我们需要使用命令ldgt来初始化GPTR，不仅如此，在保护模式中我们也可以使用ldgt命令来修改GPTR的值。ldgt的指令格式是：lgdt 48位内存数据</p>
+</li>
+<li><p>段描述符与内存的关系</p>
+<p> <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img9.png" alt="img"> </p>
+<p> 如图可知，段描述符指向内存的各个地方。但是GDT的第0个段描述符是不可用的，因为GDT是用选择子来索引的，如果选择子忘记初始化就默认为0，这样选择子相当于索引到不可用的段描述符，而不会索引到其他内存空间。</p>
+</li>
+</ol>
+<h2 id="打开A20地址线"><a href="#打开A20地址线" class="headerlink" title="打开A20地址线"></a>打开A20地址线</h2><ol>
+<li><p>实模式下的地址回绕</p>
+<p> 实模式下有20根地址线，也就是说最多可以索引1MB空间。实模式下我们用<code>16位段基址:16位偏移量</code>的形式来计算物理地址，我们发现假设16位段基址是0xFFFF，16位地址量是0xFFFF，最终计算得到的物理地址应该是：0xFFFF*16+0xFFFF&#x3D;0x10FFEF,我们发现这个地址已经超出了20位地址线所能传输的最大范围0xFFFFF。那当我们在实模式下访问超出0xFFFFF物理地址范围的空间时会发生什么事吗？其实并不会发生太糟糕的事，由于硬件原因，超出20位地址线的位将被舍弃，当你访问超过0x100000时就相当于访问0x00000,访问0x10FFEF时就相当于访问0x0FFEF。这个特点就叫做地址回绕。</p>
+</li>
+<li><p>32位CPU也要兼容地址回绕</p>
+<p> 实模式下地址回绕的特性被许多程序员视为优点加以利用编程，但是保护模式却没有地址回绕这个问题。所以为了满足32位CPU必须兼容保护模式和实模式的特点，我们必须让32位CPU也要具备可以自由使用地址回绕的特点。</p>
+<p> 我们知道32位CPU有32位的地址线，IBM在键盘控制器上的一些输出线来控制第21根地址线(A20)的有效性，成为A20Gate。</p>
+<p> 如果A20Gate&#x3D;1，当访问0x100000~0x10FFEF之间的地址将会正常访问</p>
+<p> 如果A20Gate&#x3D;0，当访问0x100000~0x10FFEF之间的地址将会触发地址回绕特性</p>
+</li>
+<li><p>打开A20地址线</p>
+<p> 因此，当我们想从实模式进入保护模式时，我们必须打开A20Gate才能让保护模式的程序正常运行，打开A20Gate的代码如下：</p>
+<pre><code> in al,0x92
+ or al,0000_0010B
+ out 0x92,al
+</code></pre>
+</li>
+</ol>
+<h2 id="保护模式的开关-CRO寄存器的PE位"><a href="#保护模式的开关-CRO寄存器的PE位" class="headerlink" title="保护模式的开关,CRO寄存器的PE位"></a>保护模式的开关,CRO寄存器的PE位</h2><p>想从实模式进入保护模式，我们还差最后一步。控制寄存器CRx是CPU的窗口，既可以用来展示CPU内部状态，又可以用来控制CPU运行机制。这次我们要用到CR0寄存器的PE（Protection Eanble）位，CR0寄存器构造如下图所示：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img10.png" alt="img"> </p>
+<p>右上方是CR0格式位，下方则是对每个位的描述，我们目前只需要关注PE位就行了，将PE位置1，让CPU知道我们要进入保护模式了，代码如下：</p>
+<pre><code>mov eax,cr0
+or eax,0x00000001
+mov cr0,eax
+</code></pre>
+<h1 id="编写loader-S进入保护模式"><a href="#编写loader-S进入保护模式" class="headerlink" title="编写loader.S进入保护模式"></a>编写loader.S进入保护模式</h1><h2 id="头文件boot-inc更新"><a href="#头文件boot-inc更新" class="headerlink" title="头文件boot.inc更新"></a>头文件boot.inc更新</h2><pre><code>;--------------loader和kernel----------------
+
+LOADER_BASE_ADDR equ 0x900
+;我们要将loader装载到内存中的可用区域，查询上一章节的1MB内存布局图可看出只有两个位置是可用的：0x500~0x7BFF,0x7E00~0x9FBFF
+;我们希望让loader位置在低地址，以便可以空位更多的空间给未来的内核程序加载
+;至于为什么不选择0x500而是0x900，则是因为想让程序与程序之间有一点空格 
+
+LOADER_START_SECTOR equ 0x2
+;用LBA描述，磁盘里的第0块扇区已经用于存放MBR代码了
+;为了保险起见让扇区之间有间隔，所以loader存放在第2块扇区
+
+;------------gdt描述符属性（请对照段描述符格式理解以下代码）----------------------
+;为了方便我们将64位的gdt描述符分为高32位和低32位来定义，下面代码定义的都是低32位
+
+
+;二进制数据中间的&#39;_&#39;符号没有任何意义，仅仅只是为了让程序员看得更清楚，编译器会自动忽略
+;命名中的DESC是描述的意思
+DESC_G_4K equ 1_00000000000000000000000b ;第23位G 表示4K或者1MB位 段界限的单位值 此时为1则为4k 
+DESC_D_32 equ 1_0000000000000000000000b  ;第22位D/B位 表示地址值用32位EIP寄存器 操作数与指令码32位
+DESC_L    equ 0_000000000000000000000b   ;第21位 设置成0表示32位代码段而非64位代码段
+DESC_AVL  equ 0_00000000000000000000b    ;第20位 CPU不用此位设置为0
+
+
+;LIMIT代表段界限，我们打算在GPT里加入三个段：代码段、数据段、显存段(就是将之前显存的位置单独划分一个成一个段)
+;我们对4GB的内存空间采用平坦模式，也就是说基址=0，偏移量最大范围=4GB（除了显存段外，显存段任然放置在0xB8000~0xBFFFF）
+;DESC_LIMIT_CODE2代表定义代码段的段界限(第二部分)
+DESC_LIMIT_CODE2  equ  1111_0000000000000000b   ;平坦模型要满足最大段界限*粒度=4GB，换算可知段界限必须为0xFFFFF,也就是全为1
+DESC_LIMIT_DATA2  equ  DESC_LIMIT_CODE2         ;相同的值  数据段与代码段段界限相同
+DESC_LIMIT_VIDEO2 equ	0000_0000000000000000b	;第16-19位 显存段任然放置在0xB8000~0xBFFFF，段基址应该为0xbffff,
+                                                ;段界限应该为(0xbffff-0xb8000)/4k=7(高4位为0)
+
+
+DESC_P            equ 	1_000000000000000b	  
+DESC_DPL_0        equ  00_0000000000000b         
+DESC_DPL_1        equ  01_0000000000000b	  
+DESC_DPL_2        equ  10_0000000000000b
+DESC_DPL_3        equ  11_0000000000000b
+DESC_S_sys        equ  0_000000000000b           
+DESC_S_CODE       equ  1_000000000000b        
+DESC_S_DATA       equ  DESC_S_CODE
+
+
+;这边存在一个问题，根据书本上的Type格式图里从3~0位数据段的排序应该是xwea，而代码部分则按照xewa的顺序，需要进一步确认
+DESC_TYPE_CODE    equ  1000_00000000b            ;第9-11位表示该段状态 1000 可执行 不允许可读 已访问位0
+;x=1 e=0 w=0 a=0
+DESC_TYPE_DATA    equ  0010_00000000b            ;第9-11位type段   0010  可写  
+;x=0 e=0 w=1 a=0
+
+
+
+;代码段描述符高位4字节初始化 (0x00共8位 &lt;&lt;24 共32位初始化0) 
+;4KB为单位 Data段32位操作数 初始化的部分段界限 最高权限操作系统代码段 P存在表示 状态 
+DESC_CODE_HIGH4   equ  (0x00&lt;&lt;24) + DESC_G_4K + DESC_D_32 + \
+DESC_L + DESC_AVL + DESC_LIMIT_CODE2 + \
+DESC_P + DESC_DPL_0 + DESC_S_CODE + DESC_TYPE_CODE + 0x00
+
+;数据段描述符高位4字节初始化
+DESC_DATA_HIGH4   equ  (0x00&lt;&lt;24) + DESC_G_4K + DESC_D_32 + \
+DESC_L + DESC_AVL + DESC_LIMIT_DATA2 + \
+DESC_P + DESC_DPL_0 + DESC_S_DATA + DESC_TYPE_DATA + 0x00
+
+;显存段描述符高位4字节初始ua
+DESC_VIDEO_HIGH4   equ (0x00&lt;&lt;24) + DESC_G_4K + DESC_D_32 + \
+DESC_L + DESC_AVL + DESC_LIMIT_VIDEO2 + \
+DESC_P + DESC_DPL_0 + DESC_S_DATA + DESC_TYPE_DATA + 0x0B  ;书本上末尾是0，但显存段段基址应该为0xbffff，也就是说这边末尾应该是B 
+
+
+
+;-------------------- 选择子属性 --------------------------------
+RPL0    equ 00b
+RPL1    equ 01b
+RPL2    equ 10b
+RPL3    equ 11b
+TI_GDT  equ 000b
+TI_LDT  equ 100b
+</code></pre>
+<p><strong>PS：在本段代码中对数据段type字段x&#x3D;0 e&#x3D;0 w&#x3D;1 a&#x3D;0之间的顺序尚不明确，是个还没解决的问题，有机会再来回答</strong></p>
+<h2 id="loader-S更新"><a href="#loader-S更新" class="headerlink" title="loader.S更新"></a>loader.S更新</h2><pre><code>;loader.S 负责进入保护模式
+
+%include &quot;boot.inc&quot;
+SECTION loader vstart=LOADER_BASE_ADDR
+LOADER_STACK_TOP equ LOADER_BASE_ADDR 		   ;是个程序都需要有栈区 栈指针设置为代码段开始地址，一个向下增长，一个向上增长，互不干扰
+jmp loader_start                      		   ;跳跃到代码区
+
+
+    ;构建gpt及其内部的描述符
+    ;一共放入4个段描述符，分别是空段描述符、代码段描述符、数据/栈段描述符（共用一个段）、显存段描述符
+    ;由于小端序，所以高位字节应放置在高地址(越靠下面地址越高),低位字节放置在低地址
+    GDT_BASE:   dd 0x00000000           ;我们说过gdt的第一个段描述符不能用，所以全部置0
+                dd 0x00000000 
+
+    CODE_DESC:  dd 0x0000FFFF         	;代码段的段界限应该为0xfffff，段基址应该为0
+                dd DESC_CODE_HIGH4
+
+    ;这边数据段和栈段共用一个段（因为栈段本身就是反方向增长的数据段）
+    ;有一个小问题：栈段是向下增长的，数据段是向上增长的，它们段描述符type字段的e不相等怎么能共用呢？
+    ;其实段描述符e字段并非真正规定了段的增长方向，而是给CPU检测界限的。
+    ;比如一个段的界限是4，基址是8；如果e=0向上增长，CPU检测界限边界就是8+4=12，如果e=1向下增长，CPU检测界限边界就是8-4=4
+    ;也就是说我把数据段和栈段共用(e=0)并不会影响栈段真正的增长方向，但是会影响CPU对栈顶边界的检测（不过我们这边为了方便就暂时不考虑这个问题。）
+    DATA_STACK_DESC:    dd 0x0000FFFF   ;数据/栈段的段界限应该为0xfffff，段基址应该为0
+                        dd DESC_DATA_HIGH4
+
+    VIDEO_DESC: dd 0x80000007         		   ;显存基址是0xB8000（B在高32位），界限是(bFFFF-b8000)/4k = 0x7
+                dd DESC_VIDEO_HIGH4     	  
+                    
+    GDT_SIZE    equ $ - GDT_BASE               ;当前位置减去GDT_BASE的地址 等于GDT的大小
+    GDT_LIMIT   equ GDT_SIZE - 1   	           ;SIZE - 1即为最大偏移量，GDT的偏移量是要放在GDTR里的，单位固定是1字节，和段描述符中的段界限不同
+
+    times 60 dq 0                              ;预留60个 四字型 描述符
+
+
+    ;构造16位的段选择子
+    SELECTOR_CODE        equ (0X0001&lt;&lt;3) + TI_GDT + RPL0    
+    SELECTOR_DATA	  equ (0X0002&lt;&lt;3) + TI_GDT + RPL0
+    SELECTOR_VIDEO       equ (0X0003&lt;&lt;3) + TI_GDT + RPL0
+
+
+    ;gdt指针（要放置在GDTR的48位内存数据） 
+    ;2字gdt界限放在前面 4字gdt地址放在后面 
+    ;lgdt 48位格式 低位16位界限 高位32位起始地址
+    gdt_ptr         dw GDT_LIMIT
+                    dd GDT_BASE
+
+
+    loadermsg db   &#39;welcome to loader zone!&#39;                  ;loadermsg 加载区显示字符
+
+
+;以下代码则是正式进入保护模式
+loader_start:
+
+    ;这段和之前一样，调用BIOS提供的int10功能显示字符
+    mov sp,LOADER_BASE_ADDR					
+    mov bp,loadermsg                                           
+    mov cx,23     
+    mov ax,cs                                                 
+    mov es,ax                                                 
+    mov ax,0x1301                                             
+    mov bx,0x001f                                           
+    mov dx,0x1800                                             
+    int 0x10
+    
+    ; --------------------------------- 设置进入保护模式 -----------------------------
+    ; 1 打开A20 gate 
+    in al,0x92                
+    or al,0000_0010b
+    out 0x92,al
+
+    ; 2 加载gdt
+    lgdt [gdt_ptr] 
+
+    ; 3 将cr0 的 pe位置1
+    mov eax,cr0                
+    or  eax,0x00000001              
+    mov cr0,eax
+    
+    ;-------------------------------- 已经打开保护模式 ---------------------------------------
+    jmp dword SELECTOR_CODE:p_mode_start                       
+    
+
+[bits 32]
+p_mode_start: 
+    ;是初始化段选择子
+    mov ax,SELECTOR_DATA
+    mov ds,ax
+    mov es,ax
+    mov ss,ax
+    mov esp,LOADER_STACK_TOP
+    mov ax,SELECTOR_VIDEO
+    mov gs,ax
+    
+    ;测试显存段
+    mov byte [gs:160],&#39;P&#39;
+    
+    jmp $     
+</code></pre>
+<h2 id="mbr-S更新"><a href="#mbr-S更新" class="headerlink" title="mbr.S更新"></a>mbr.S更新</h2><p>由于loader.S编译出来的loader.bin的大小已经超出了一个扇区也就是512字节，所以我们需要将mbr.S里调用装载loader函数前传参从<code>mov cx,1</code>改成<code>mov cx,4</code>（假设loader.bin占据了4个扇区，这样以后就不用每次更新都要修改）</p>
+<p>还有dd指令装载loader.S时也要有相应的更改,将<code>count=1</code>改为<code>count=4</code></p>
+<h2 id="运行结果"><a href="#运行结果" class="headerlink" title="运行结果"></a>运行结果</h2><p>屏幕显示如下图：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img11.png" alt="img"></p>
+<p>可以用<code>info gdt</code>查看构建的gdt:</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img12.png" alt="img">  </p>
+<h1 id="处理器微架构简介-jmp清空流水线"><a href="#处理器微架构简介-jmp清空流水线" class="headerlink" title="处理器微架构简介(jmp清空流水线)"></a>处理器微架构简介(jmp清空流水线)</h1><h2 id="流水线"><a href="#流水线" class="headerlink" title="流水线"></a>流水线</h2><p>指令并不是以原子的形式执行的，而是可以被拆分的。我们把一条指令拆分成三部分取指、译码、执行，CPU在一个时间段内无法执行两个执行，但是在一个时间段内可以同时执行取值&#x2F;译码&#x2F;执行。</p>
+<p>这样可以大大缩短执行时间，三级流水线技术如下图：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img13.png" alt="img"></p>
+<p>如果原子性地执行3条指令需要9个周期，采用流水线技术就可以在5个周期内执行3条指令</p>
+<p>在流水线基础上，我们发现一个规律：影响流水线效率地关键在分割的细度，分割得越细，执行得越快</p>
+<p>你可以假想一下将一条指令划分为4个部分的四级流水线，4级流水线执行速度就将比3级更快</p>
+<h2 id="乱序执行"><a href="#乱序执行" class="headerlink" title="乱序执行"></a>乱序执行</h2><p>CPU并非一直按照顺序执行命令，而是按照一定的策略打乱执行顺序（当然，有相关关系的指令顺序不能被打乱），来提升速度</p>
+<p>如以下代码：</p>
+<pre><code>mov eax,[0x1234]
+add ecx,ebx
+</code></pre>
+<p>两条指令并没有因果关系，因此在第一条指令等待内存访问时，第二条指令将会先执行，以此提高整体速度</p>
+<p>再看以下代码：</p>
+<pre><code>mov eax,[0x1234]
+push eax
+call function
+</code></pre>
+<p>第一条指令和第二条指令之间存在相关关系，那它就不能乱序执行了吗？不完全是。</p>
+<p>第二条指令本质上可以被划分为两个微操作:<code>sub esp,4</code>和<code>mov [esp],eax</code>,我们发现只有<code>mov [esp],eax</code>和第一条指令相关。</p>
+<p>因此CPU乱序执行可以在等待第一条指令的内存访问时执行<code>sub esp,4</code>，甚至还会先执行第三条指令</p>
+<h2 id="缓存"><a href="#缓存" class="headerlink" title="缓存"></a>缓存</h2><p>基于时间局部性和空间局部性原理发明的硬件(SRAM),当CPU需要去访问内存时先看看缓存，缓存有的话就不用去内存了，大大提高速度。</p>
+<h2 id="分支预测"><a href="#分支预测" class="headerlink" title="分支预测"></a>分支预测</h2><p>分支预测时针对有条件跳转指令(if&#x2F;switch&#x2F;for&#x2F;while)在流水线上糟糕的表现研发出的技术</p>
+<p>我们发现流水线技术里你执行当前指令的同时（或者说当前指令还没执行完），你就必须知道下一条指令是什么并且进行操作。</p>
+<p>如果所有指令都是顺序的话，那当然没什么问题。但是程序都是有分支的(有条件跳转指令)，假想我们现在在执行一条有条件跳转指令，那请问流水线的下一步要取那一条指令？要取左边的指令还是取右边的指令？如果出错了我们就必须花费一定的代价来清除流水线。</p>
+<p>最简单的分支预测是根据上一次是否跳转来执行，如果上一次跳转了，那么我们预测这一次也跳转（想想循环指令就明白为什么了）</p>
+<p>Intel的分支预测部件中用了分支目标缓冲区(Branch Target Buffer,BTB)如下图:</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img14.png" alt="img"></p>
+<p>本质上就是根据过往统计次数来判断下一次是否跳转</p>
+<h2 id="为什么使用远跳转指令来清空流水线"><a href="#为什么使用远跳转指令来清空流水线" class="headerlink" title="为什么使用远跳转指令来清空流水线"></a>为什么使用远跳转指令来清空流水线</h2><p>我们使用<code>jmp dword SELECTOR_CODE:p_mode_start</code>来更新流水线，究竟是为什么？</p>
+<ol>
+<li><p>段描述缓冲寄存器未更新</p>
+<p> 32位CPU兼容保护模式和实模式，段缓存寄存器在实模式下和保护模式下都有用。实模式下：段描述缓冲寄存器用于缓存段基址，保护模式下：段描述缓冲寄存器缓存段描述符。只有当CPU重新引用一个段后，段描述缓冲寄存器才会更新。</p>
+<p> 当我们从实模式到保护模式后，我们的段描述缓存寄存器存在的还是实模式下用的20位段基址，这当然是不行的。所以我们指令跳转到<code>SELECTOR_CODE:p_mode_start</code>相当于重新引用一个段，让它更新。</p>
+</li>
+<li><p>流水线中指令译码错误</p>
+<p> 从实模式到保护模式，一开始我们是16位指令，后来是32位指令。因为CPU的流水线技术提前被加载进流水线的32位指令可能会被译码错误成16位指令。因此我们使用无条件跳转指令jmp,跳转过后会自动清空流水线，避免译码错误。</p>
+</li>
+<li><p>dword</p>
+<p> dword则是让编译器将<code>p_mode_start</code>当成32位操作数处理保证得到正确的地址</p>
+</li>
+</ol>
+<h1 id="保护模式提供的保护"><a href="#保护模式提供的保护" class="headerlink" title="保护模式提供的保护"></a>保护模式提供的保护</h1><p>这里围绕对内存段的保护做基本的阐述，其他方面的保护，如特权级以后再说</p>
+<h2 id="向段寄存器加载选择子时提供的保护"><a href="#向段寄存器加载选择子时提供的保护" class="headerlink" title="向段寄存器加载选择子时提供的保护"></a>向段寄存器加载选择子时提供的保护</h2><p>当引用一个内存段时，实际上就是往段寄存器加载选择子，为了避免出现非法访问内存段的情况，处理器为做以下检测：</p>
+<ol>
+<li><p>判断选择子的索引值是否越界(0&lt;选择子的索引值&lt;8192)</p>
+</li>
+<li><p>检测段寄存器的用途和段类型是否匹配，大致原则如下：</p>
+</li>
+</ol>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%9B%9B%EF%BC%89/img15.png" alt="img"></p>
+<ol start="3">
+<li>检测段描述符的P位，判断其是否存在</li>
+</ol>
+<h2 id="对代码段和数据段的保护"><a href="#对代码段和数据段的保护" class="headerlink" title="对代码段和数据段的保护"></a>对代码段和数据段的保护</h2><p>CPU每访问一个地址，都要确定其地址不能超过其所在内存段的范围</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -179,7 +644,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2023-11-11 13:49:29" itemprop="dateModified" datetime="2023-11-11T13:49:29+08:00">2023-11-11</time>
+      <time title="Modified: 2023-11-11 17:02:44" itemprop="dateModified" datetime="2023-11-11T17:02:44+08:00">2023-11-11</time>
     </span>
 
   
@@ -222,7 +687,7 @@
 <h1 id="CPU的实模式"><a href="#CPU的实模式" class="headerlink" title="CPU的实模式"></a>CPU的实模式</h1><p>实模式是指8086CPU的工作环境、工作内容、工作状态一整套内容（寻址方式、寄存器大小、指令用法等），而不是单一某个方面的内容。</p>
 <p>实模式的特点如下：</p>
 <ol>
-<li><p>CPU只能寻址1MB的物理内存，因为它只有20位地址线</p>
+<li><p>CPU只能寻址1MB范围的物理内存（并不代表内存大小1MB），因为它只有20位地址线</p>
 </li>
 <li><p>实模式下操作系统和应用程序的执行权限都一样，没有任何保护；实模式下应用程序也可随意修改操作系统的内存（当然这是不安全的）</p>
 </li>
@@ -671,7 +1136,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2023-11-10 09:38:11" itemprop="dateModified" datetime="2023-11-10T09:38:11+08:00">2023-11-10</time>
+      <time title="Modified: 2023-11-11 17:01:58" itemprop="dateModified" datetime="2023-11-11T17:01:58+08:00">2023-11-11</time>
     </span>
 
   
@@ -685,7 +1150,7 @@
     
     <div class="post-body" itemprop="articleBody">
           <p>在这一章，我们编写一段MBR程序并装载在磁盘里，开始接手操作系统的第一步。</p>
-<h1 id="BIOS与MBR的职责和功能"><a href="#BIOS与MBR的职责和功能" class="headerlink" title="BIOS与MBR的职责和功能"></a>BIOS与MBR的职责和功能</h1><p>下图是1MB内存空间在实模式下的内存布局：</p>
+<h1 id="BIOS与MBR的职责和功能"><a href="#BIOS与MBR的职责和功能" class="headerlink" title="BIOS与MBR的职责和功能"></a>BIOS与MBR的职责和功能</h1><p>下图是1MB寻址范围内存空间在实模式下的内存布局（注意区分寻址范围和空间大小的区别，实模式由于20位地址总线所以最大寻址范围是1MB，但这不代表内存空间大小就1MB，实际内存大小是1MB*Byte）：</p>
 <p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%BA%8C%EF%BC%89/img1.jpg" alt="img"></p>
 <p><strong>PS：0x00000~0x9FFFF是RAM，0xA0000~0xFFFFF是ROM</strong><br><strong>你可能会觉得疑惑：一定要如此布局吗？</strong><br><strong>该布局方式源于早期系统，其中一些魔数（特别的数，像是为什么MBR其实地址在0x7C00）也是早期约定好的规矩，而后来的设备为了可以兼容早期设备都遵守这些规矩</strong></p>
 <p>BIOS全称叫Base Input&amp;Output System，即基本输入输出系统，是固化在ROM上的一段程序</p>
