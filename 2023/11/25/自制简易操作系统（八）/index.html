@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="断言assert断言即断定的说，是一种用来调试的手段。比如我在程序的某个地方这断定的说flag&#x3D;1（ASSERT(flag&#x3D;&#x3D;1)）,如果条件成立则无事发生，如果不成立则触发断言屏幕悬停并在屏幕上打印错误信息。断言还分为系统断言和用户断言，我们本节要通过宏定义实现系统断言。 断言触发时我们希望能停止中断（避免CPU中断切换任务），所以首先我们需要能灵活打开关闭中断(e">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自制简易操作系统（八）">
+<meta property="og:url" content="http://example.com/2023/11/25/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/index.html">
+<meta property="og:site_name" content="Sparkle&#39;s Space">
+<meta property="og:description" content="断言assert断言即断定的说，是一种用来调试的手段。比如我在程序的某个地方这断定的说flag&#x3D;1（ASSERT(flag&#x3D;&#x3D;1)）,如果条件成立则无事发生，如果不成立则触发断言屏幕悬停并在屏幕上打印错误信息。断言还分为系统断言和用户断言，我们本节要通过宏定义实现系统断言。 断言触发时我们希望能停止中断（避免CPU中断切换任务），所以首先我们需要能灵活打开关闭中断(e">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img1.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img2.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img3.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img5.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img4.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img6.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img7.png">
+<meta property="article:published_time" content="2023-11-25T09:43:19.000Z">
+<meta property="article:modified_time" content="2023-11-28T09:20:12.684Z">
+<meta property="article:author" content="Sparkle">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img1.png">
+
+
+<link rel="canonical" href="http://example.com/2023/11/25/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2023/11/25/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/","path":"2023/11/25/自制简易操作系统（八）/","title":"自制简易操作系统（八）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>自制简易操作系统（八） | Sparkle's Space</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Sparkle's Space</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%96%AD%E8%A8%80assert"><span class="nav-number">1.</span> <span class="nav-text">断言assert</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#make%E5%92%8Cmakefile"><span class="nav-number">2.</span> <span class="nav-text">make和makefile</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%B7%B1%E7%9A%84%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%93%8D%E4%BD%9C%E5%87%BD%E6%95%B0"><span class="nav-number">3.</span> <span class="nav-text">实现自己的字符串操作函数</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BD%8D%E5%9B%BEbitmap%E4%BB%A5%E5%8F%8A%E5%87%BD%E6%95%B0%E5%AE%9E%E7%8E%B0"><span class="nav-number">4.</span> <span class="nav-text">位图bitmap以及函数实现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F"><span class="nav-number">5.</span> <span class="nav-text">内存管理系统</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E6%B1%A0%E8%A7%84%E5%88%92"><span class="nav-number">5.1.</span> <span class="nav-text">内存池规划</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F%E7%AC%AC%E4%B8%80%E6%AD%A5%EF%BC%8C%E5%88%86%E9%85%8D%E5%86%85%E5%AD%98%E9%A1%B5"><span class="nav-number">5.2.</span> <span class="nav-text">内存管理系统第一步，分配内存页</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E8%AF%95%EF%BC%9A"><span class="nav-number">5.3.</span> <span class="nav-text">调试：</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Sparkle"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Sparkle</p>
+  <div class="site-description" itemprop="description">If there is no torchlight in the future, I will be the only light.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">11</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/25/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Sparkle">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sparkle's Space">
+      <meta itemprop="description" content="If there is no torchlight in the future, I will be the only light.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="自制简易操作系统（八） | Sparkle's Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          自制简易操作系统（八）
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2023-11-25 17:43:19" itemprop="dateCreated datePublished" datetime="2023-11-25T17:43:19+08:00">2023-11-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2023-11-28 17:20:12" itemprop="dateModified" datetime="2023-11-28T17:20:12+08:00">2023-11-28</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="断言assert"><a href="#断言assert" class="headerlink" title="断言assert"></a>断言assert</h1><p>断言即断定的说，是一种用来调试的手段。比如我在程序的某个地方这断定的说flag&#x3D;1（ASSERT(flag&#x3D;&#x3D;1)）,如果条件成立则无事发生，如果不成立则触发断言屏幕悬停并在屏幕上打印错误信息。断言还分为系统断言和用户断言，我们本节要通过宏定义实现系统断言。</p>
+<p>断言触发时我们希望能停止中断（避免CPU中断切换任务），所以首先我们需要能灵活打开关闭中断(eflags里的’IF’位)的函数。于是我们在interrupt.c里添加了四个工具函数以实现灵活控制中断。</p>
+<p>新增代码如下：</p>
+<ul>
+<li><p>kernel&#x2F;interrupt.h：</p>
+<pre><code>  #ifndef __KERNEL_INTERRUPT_H__
+  #define __KERNEL_INTERRUPT_H__
+
+  typedef void* intr_handler;
+
+  void idt_init(void);
+
+  enum intr_status&#123;
+      INTR_OFF,
+      INTR_ON
+  &#125;;
+
+  enum intr_status intr_get_status(void);
+  enum intr_status intr_set_status(enum intr_status);
+  enum intr_status intr_enable(void);
+  enum intr_status intr_disable(void);
+
+  #endif
+</code></pre>
+</li>
+<li><p>kernel&#x2F;interrupt.c:</p>
+<pre><code>  #define EFLAGS_IF 0x00000200
+
+  //用内联汇编实现查询eflags状态
+  #define GET_EFLAGS(EFLAG_VAR) asm volatile(&quot;pushfl; popl %0&quot;: &quot;=g&quot;(EFLAG_VAR))
+
+  //开中断并返回当前状态
+  enum intr_status intr_enable()
+  &#123;
+      if(intr_get_status() != INTR_ON)
+      &#123;
+          asm volatile(&quot;sti&quot;);
+          return INTR_OFF;
+      &#125;
+      return INTR_ON;
+  &#125;
+
+  //关中断并返回当前状态
+  enum intr_status intr_disable()
+  &#123;
+      if(intr_get_status() != INTR_OFF)
+      &#123;
+          asm volatile(&quot;cli&quot;);
+          return INTR_ON;
+      &#125;
+      return INTR_OFF;
+  &#125;
+
+  //设置中断状态
+  enum intr_status intr_set_status(enum intr_status status)
+  &#123;
+      return (status &amp; INTR_ON) ? intr_enable() : intr_disable();
+  &#125;
+
+  //获取中断状态
+  enum intr_status intr_get_status()
+  &#123;
+      uint32_t eflags = 0;
+      GET_EFLAGS(eflags);
+      return (eflags &amp; EFLAGS_IF) ? INTR_ON : INTR_OFF; 
+  &#125;
+</code></pre>
+</li>
+</ul>
+<p>接下来我们要用宏定义实现断言:</p>
+<ul>
+<li><p>kernel&#x2F;debug.h:</p>
+<pre><code>  #ifndef __KERNEL_DEBUG_H__
+  #define __KERNEL_DEBUG_H__
+
+  void panic_spin(char* filename,int line,const char* func,const char*condition);
+
+  #define PANIC(...) panic_spin(__FILE__ , __LINE__ , __func__, __VA_ARGS__)
+  //(...)是可变宏参数, __VA_ARGS__预处理器专用标识符，他就相当于是可变宏参数的形参
+  //__FILE__ , __LINE__ , __func__则是由系统自动提供的，分别代表文件名、行号、函数名
+
+
+  //如果通过编译器定义了NDEBUG(`gcc-DNDEBUG`)就把断言清空（避免影响系统运作速度）
+  //否则就在有断言的地方进行条件判断，条件为假则触发断言函数
+  #ifdef NDEBUG 
+  #define ASSERT(CONDITION) ((void)0)
+  #else
+  #define ASSERT(CONDITION) \
+  if(CONDITION)&#123;&#125;        \
+  else&#123; PANIC(#CONDITION); &#125;
+  //#CONDITION是将CONDITION转化为字符串传入宏函数PANIC
+
+  #endif
+  #endif
+</code></pre>
+</li>
+<li><p>kernel&#x2F;debug.c：</p>
+<pre><code>  #include&quot;debug.h&quot;
+  #include&quot;../lib/kernel/print.h&quot;
+  #include&quot;interrupt.h&quot;
+
+  void panic_spin(char* filename,int line,const char* func,const char*condition)&#123;
+
+      intr_disable();                 //关闭中断，防止cpu处理其他进程被调换
+
+      //打印错误信息
+      put_str(&quot;\n\n\n\\**********ERROR\\**********\\\n&quot;);
+      put_str(&quot;Filename: &quot;);put_str(filename);put_char(&#39;\n&#39;);
+      put_str(&quot;Line: &quot;); put_int(line); put_char(&#39;\n&#39;);
+      put_str(&quot;Func: &quot;);put_str((char*)func);put_char(&#39;\n&#39;);
+      put_str(&quot;Condition: &quot;);put_str((char*)condition);put_char(&#39;\n&#39;);
+      put_str(&quot;\\**********ERROR\\**********\\\n&quot;);
+
+      while(1);
+  &#125;
+</code></pre>
+</li>
+</ul>
+<h1 id="make和makefile"><a href="#make和makefile" class="headerlink" title="make和makefile"></a>make和makefile</h1><p>之前我们都是把每一个独立的.c&#x2F;.S文件编译成.o文件，然后再一起链接。手动输入命令太过麻烦，而且如果其中一个头文件被修改过，所有引用过该头文件的文件都需要重新编译。而如果一个.o文件被修改过，所有文件都要重新链接。在复杂的系统里用人工来处理这件事是相当麻烦的，所以我们引用了make和makefile来帮助我们快捷的编译链接文件。</p>
+<p>make是命令，makefile则是写规则的文件。</p>
+<p>makefile里最基础的规则格式如下:</p>
+<pre><code>目标文件:依赖文件
+[Tab]命令
+</code></pre>
+<p>当我们使用命令<code>make 目标文件</code>时，系统会自动检测所有依赖文件，如果依赖文件没有新的修改，则无事发生；如果依赖文件被修改过了，则执行shell命令。shell命令一般是将所有依赖文件编译成目标文件。</p>
+<p>这里不再讲述更多的makefile语法，需要的话请网上查找</p>
+<p>当前的makefile文件如下：</p>
+<pre><code>    BUILD_DIR = ./build
+    ENTRY_POINT = 0xc0001500
+    AS = nasm
+    CC = gcc
+    LD = ld
+    LIB = -I lib/ -I lib/kernel/ -I lib/user/ -I kernel/ -I device/ 
+    ASFLAGS = -f elf
+
+    CFLAGS = -Wall -m32 -fno-stack-protector $(LIB) -c -fno-builtin -W -Wstrict-prototypes -Wmissing-prototypes
+    # -fno-stack-protector 闭栈保护的编译选项，栈保护作用是禁止编译器在函数的栈帧中插入栈保护符号，以防止栈溢出攻击。
+    # -fno-builtin 告诉编译器不要采用内部函数，因为我们以后会自定义与内部函数同名的函数
+    # -Wall 启动所有警告
+    # -W 启动常见警告
+    # -Wstrict-prototypes  要求函数声明中必须有参数类型，否则警告
+    # -Wmissing-prototypes 要求函数必须声明，否则警告
+
+    LDFLAGS =  -m elf_i386 -Ttext $(ENTRY_POINT) -e main -Map $(BUILD_DIR)/kernel.map
+    # -Map $(BUILD_DIR)/kernel.map  输出文件build/kernel.map。用于记录kernel符号地址
+
+    OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
+        $(BUILD_DIR)/timer.o $(BUILD_DIR)/kernel.o $(BUILD_DIR)/print.o \
+        $(BUILD_DIR)/debug.o 
+    # 定义目标文件名集合，用于ld时依赖文件项
+
+
+    ##############     c代码编译     			###############
+    $(BUILD_DIR)/main.o: kernel/main.c lib/kernel/print.h \
+            lib/stdint.h kernel/init.h
+        $(CC) $(CFLAGS) $&lt; -o $@
+
+    $(BUILD_DIR)/init.o: kernel/init.c kernel/init.h lib/kernel/print.h \
+            lib/stdint.h kernel/interrupt.h device/timer.h
+        $(CC) $(CFLAGS) $&lt; -o $@
+
+    $(BUILD_DIR)/interrupt.o: kernel/interrupt.c kernel/interrupt.h \
+            lib/stdint.h kernel/global.h lib/kernel/io.h lib/kernel/print.h
+        $(CC) $(CFLAGS) $&lt; -o $@
+
+    $(BUILD_DIR)/timer.o: device/timer.c device/timer.h lib/stdint.h\
+            lib/kernel/io.h lib/kernel/print.h
+        $(CC) $(CFLAGS) $&lt; -o $@
+
+    $(BUILD_DIR)/debug.o: kernel/debug.c kernel/debug.h \
+            lib/kernel/print.h lib/stdint.h kernel/interrupt.h
+        $(CC) $(CFLAGS) $&lt; -o $@
+    ##############     c代码编译     			###############
+
+
+    ##############    汇编代码编译    ###############
+    $(BUILD_DIR)/kernel.o: kernel/kernel.S
+        $(AS) $(ASFLAGS) $&lt; -o $@
+
+    $(BUILD_DIR)/print.o: lib/kernel/print.S
+        $(AS) $(ASFLAGS) $&lt; -o $@
+    ##############    汇编代码编译    ###############
+
+
+    ##############    链接所有目标文件    #############
+    $(BUILD_DIR)/kernel.bin: $(OBJS)
+        $(LD) $(LDFLAGS) $^ -o $@
+    ##############    链接所有目标文件    #############
+
+
+    ################  伪目标 ###############################
+    .PHONY : mk_dir hd clean build all
+
+    mk_dir:
+        if [ ! -d $(BUILD_DIR) ]; then mkdir $(BUILD_DIR); fi
+
+    hd:
+        dd if=$(BUILD_DIR)/kernel.bin \
+            of=/home/sparkle2/bochs/hd60M.img \
+            bs=512 count=200 seek=9 conv=notrunc
+
+    clean:
+        cd $(BUILD_DIR) &amp;&amp; rm -f  ./*
+
+    build: $(BUILD_DIR)/kernel.bin
+
+    all: mk_dir build hd
+    ################  伪目标 ###############################
+</code></pre>
+<h1 id="实现自己的字符串操作函数"><a href="#实现自己的字符串操作函数" class="headerlink" title="实现自己的字符串操作函数"></a>实现自己的字符串操作函数</h1><ul>
+<li><p>lib&#x2F;string.h</p>
+<pre><code>  #ifndef __LIB_STRING_H
+  #define __LIB_STRING_H
+
+  #include &quot;stdint.h&quot;
+  #define NULL 0
+
+  void memset(void* dst_,uint8_t value,uint32_t size);
+  void memcpy(void* dst_,const void* src_,uint32_t size);
+  int memcmp(const void* a_,const void* b_, uint32_t size);
+  char* strcpy(char* dst_,const char* src_);
+  uint32_t strlen(const char* str);
+  int8_t strcmp(const char* a,const char* b);
+  char* strchr(const char* str,const char ch);
+  char* strrchr(const char* str,const uint8_t ch);
+  char* strcat(char* dst_,const char* src_);
+  char* strchrs(const char* str,uint8_t ch);
+  #endif
+</code></pre>
+</li>
+<li><p>lib&#x2F;string.c</p>
+<pre><code>  #include&quot;string.h&quot;
+  #include&quot;global.h&quot;
+  #include&quot;debug.h&quot;
+
+  //将dst_起始的size个字节置为value
+  void memset(void* dst_,uint8_t value,uint32_t size)&#123;
+      ASSERT(dst_!=NULL);
+      uint8_t* dst =(uint8_t*)dst_;
+      while(size-- &gt;0)&#123;
+          *dst++=value;
+      &#125;
+  &#125;
+
+  //将src_起始的size个字复制到dst_
+  void memcpy(void* dst_,const void* src_,uint32_t size)
+  &#123;
+      ASSERT(dst_ != NULL &amp;&amp; src_ != NULL);
+      uint8_t* dst = dst_;
+      const uint8_t* src = src_;
+      while((size--) &gt; 0)
+          *dst++= *src++;
+      return;
+  &#125;
+
+  //连续比较地址a和地址b开头的size字节，若相等则返回0，a&gt;b返回1，a&lt;b返回-1
+  int memcmp(const void* a_,const void* b_, uint32_t size)
+  &#123;
+      const char* a = a_;
+      const char* b = b_;
+      ASSERT(a != NULL || b != NULL);
+      while((size--) &gt; 0)
+      &#123;
+          if(*a != *b)	return (*a &gt; *b) ? 1 : -1;
+          a++;
+          b++;
+      &#125;
+      return 0;
+  &#125;
+
+
+  //将字符串从src_复制到dst_
+  char* strcpy(char* dst_,const char* src_)
+  &#123;
+      ASSERT(dst_ != NULL &amp;&amp; src_ != NULL);
+      char* dst = dst_;
+      while((*(dst_++) = *(src_++) ));
+      return dst;     
+  &#125;
+
+  //返回字符串长度
+  uint32_t strlen(const char* str)
+  &#123;
+      ASSERT(str != NULL);
+      const char* ptr = str;
+      while(*(ptr++));
+      return (ptr - str - 1);             //例如一个字 1 &#39;\0&#39; ptr会指向&#39;\0&#39;后面一位
+  &#125;
+
+
+  //比较两个字符串，a&gt;b返回1，a&lt;b返回-1，a==b返回0
+  int8_t strcmp(const char* a,const char* b)
+  &#123;
+      ASSERT(a != NULL &amp;&amp; b != NULL);
+      while(*a!=0 &amp;&amp; *a == *b)
+      &#123;
+          a++,b++;
+      &#125;   
+      return (*a &lt; *b) ? -1 : (*a &gt; *b) ; 
+  &#125;
+
+  //从左到右查找字符串str中首次出现的字符ch的地址
+  char* strchr(const char* str,const char ch)
+  &#123;
+      ASSERT(str != NULL);
+      while(*str)
+      &#123;
+          if(*str == ch)
+              return (char*)str;
+          str++;
+      &#125; 
+      return NULL;
+  &#125;
+
+  //从后往前查找字符串str中首次出现字符ch的地址
+  char* strrchr(const char* str,const uint8_t ch)
+  &#123;
+      ASSERT(str != NULL);
+      const char* last_chrptr = NULL;
+      while(*str != 0)
+      &#123;
+          if(ch == *str)	
+              last_chrptr = str;
+          str++;
+      &#125;
+      return (char*)last_chrptr;   
+  &#125;
+
+  //将字符串src_拼接到dst_后，返回拼接的串地址
+  char* strcat(char* dst_,const char* src_)
+  &#123;
+      ASSERT(dst_ != NULL &amp;&amp; src_ != NULL);
+      char* str = dst_;
+      while(*(str++));
+      str--;
+      while((*str++ = *src_++));
+      return dst_;
+  &#125;
+
+  //在字符串str中查找字符ch出现的次数
+  char* strchrs(const char* str,uint8_t ch)
+  &#123;
+      ASSERT(str != NULL);
+      uint32_t ch_cnt = 0;
+      const char*p =str;
+      while(*p!=0)&#123;
+          if(*p==ch)&#123;
+              ch_cnt++;
+          &#125;
+          p++;
+      &#125;
+      return ch_cnt
+  &#125;
+</code></pre>
+</li>
+</ul>
+<h1 id="位图bitmap以及函数实现"><a href="#位图bitmap以及函数实现" class="headerlink" title="位图bitmap以及函数实现"></a>位图bitmap以及函数实现</h1><p>我们引入一种数据结构用于资源管理：位图</p>
+<p>位图是一个线性数组，其中每一位都代表着对应的物理页(4KB)是否空闲，如下图所示：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img1.png" alt="img"></p>
+<p>bitmap的数据结构以及工具代码如下：</p>
+<ul>
+<li><p>lib&#x2F;kernel&#x2F;bitmap.h</p>
+<pre><code>  #ifndef __KERNEL_BITMAP_H__
+  #define __KERNEL_BITMAP_H__
+
+  #include &quot;global.h&quot;
+
+  #define BITMAP_MASK 1
+  struct bitmap&#123;
+      uint32_t btmp_bytes_len;
+      uint8_t* btmp_ptr;
+  &#125;;
+
+  void bitmap_init(struct bitmap* btmp);
+  bool bitmap_scan_test(struct bitmap*btmp,uint32_t bit_idx);
+  int bitmap_scan(struct bitmap*btmp,uint32_t cnt);
+  void bitmap_set(struct bitmap* btmp,uint32_t bit_idx,int8_t value);
+
+  #endif
+</code></pre>
+</li>
+<li><p>lib&#x2F;kernel&#x2F;bitmap.c</p>
+<pre><code>  #include&quot;bitmap.h&quot;
+  #include&quot;stdint.h&quot;
+  #include&quot;string.h&quot;
+  #include&quot;print.h&quot;
+  #include&quot;interrupt.h&quot;
+  #include&quot;debug.h&quot;
+
+  void bitmap_init(struct bitmap* btmp)&#123;
+      memset(btmp-&gt;btmp_ptr,0,btmp-&gt;btmp_bytes_len);
+  &#125;
+
+
+  //返回btmp中第bit_idx位的状态
+  bool bitmap_scan_test(struct bitmap*btmp,uint32_t bit_idx)&#123;
+      uint32_t byte_idx=bit_idx/8;
+      uint32_t bit_remainder=bit_idx%8;
+      return btmp-&gt;btmp_ptr[byte_idx] &amp; (BITMAP_MASK&lt;&lt;bit_remainder);
+  &#125;
+
+  //返回btmp里第一个连续cnt字节的空闲空间的起始地址,找不到则返回-1
+  int bitmap_scan(struct bitmap*btmp,uint32_t cnt)&#123;
+      uint32_t free_byte_idx=0;   //用于记录空闲位所在字节
+
+      while((0xff==btmp-&gt;btmp_ptr[free_byte_idx])&amp;&amp;(free_byte_idx&lt;btmp-&gt;btmp_bytes_len))&#123;
+          free_byte_idx++;
+      &#125;
+
+      ASSERT(free_byte_idx&lt;btmp-&gt;btmp_bytes_len);
+      if(free_byte_idx == btmp-&gt;btmp_bytes_len)&#123;
+          return -1;
+      &#125;
+
+      int free_bit_idx=0;
+      while( (uint8_t)(BITMAP_MASK&lt;&lt;free_bit_idx) &amp; btmp-&gt;btmp_ptr[free_byte_idx] )&#123;
+          free_bit_idx++;
+      &#125;
+
+      int free_bit_idx_strat=free_byte_idx*8+free_bit_idx;
+      if(cnt==1)&#123;
+          return free_bit_idx_strat;
+      &#125;
+
+      uint32_t bit_leftover=btmp-&gt;btmp_bytes_len*8-free_bit_idx_strat;
+
+      uint32_t next_bit=free_bit_idx_strat+1;
+      uint32_t count=1; //用于记录找到空闲位的个数
+
+      free_bit_idx_strat=-1;//假设找不到连续的字节那就返回-1
+
+      while(bit_leftover--)&#123;
+          if(!(bitmap_scan_test(btmp,next_bit)))&#123;
+              count++;
+          &#125;else&#123;
+              count=0;
+          &#125;
+
+          if(count==cnt)&#123;
+              free_bit_idx_strat=next_bit-cnt+1;
+              break;
+          &#125;
+          next_bit++;
+      &#125;
+      return free_bit_idx_strat;
+
+  &#125;
+
+  void bitmap_set(struct bitmap* btmp,uint32_t bit_idx,int8_t value)&#123;
+      ASSERT((value==0) ||(value==1));
+      uint32_t byte_idx =bit_idx/8;
+      uint32_t bit_remainder=bit_idx%8;
+
+      if(value)&#123;
+          btmp-&gt;btmp_ptr[byte_idx] |= (BITMAP_MASK&lt;&lt;bit_remainder);
+      &#125;else&#123;
+          btmp-&gt;btmp_ptr[byte_idx] &amp;= (BITMAP_MASK&lt;&lt;bit_remainder);
+      &#125;
+
+  &#125;
+</code></pre>
+</li>
+</ul>
+<h1 id="内存管理系统"><a href="#内存管理系统" class="headerlink" title="内存管理系统"></a>内存管理系统</h1><h2 id="内存池规划"><a href="#内存池规划" class="headerlink" title="内存池规划"></a>内存池规划</h2><p>分页机制下有了虚拟地址和物理地址，操作系统有责任把这两种地址分别管理，并通过页表将这两类地址关联。为了实现内存管理，我们需要实现一个数据结构————内存池</p>
+<p>我们打算将物理内存划分为两个内存池，一半用于内核，一半用于用户。并使用内核物理内存池和用户物理内存池来分配物理地址。</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img2.png" alt="img"></p>
+<p>而对于每一个进程，我们都需要一个虚拟用户内存池来分配虚拟地址给进程；也需要一个虚拟内核内存池来分配虚拟地址给内核。</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img3.png" alt="img"></p>
+<p>接下来我们要实现memory.h和memory.c文件，在这两个文件里实现内核物理内存池、用户物理内存池以及一个虚拟内核内存池（现在一个进程都没有，自然不需要虚拟内核用户池）</p>
+<p>memory.c里引入了两种新数据结构：pool(物理内存池)、virtual_addr(虚拟内存池)</p>
+<p>两种数据结构的构造以及3个内存池的初始化请看以下代码和图片：</p>
+<ul>
+<li><p>memory.c的代码逻辑（五步走）：</p>
+<p>  <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img5.png" alt="img"></p>
+</li>
+<li><p>执行完mem_init()后的物理低端1MB内存布局：</p>
+<p>  <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img4.png" alt="img"></p>
+</li>
+<li><p>kernel&#x2F;memory.h:</p>
+<pre><code>  #ifndef __KERNEL_MEMORY_H__
+  #define __KERNEL_MEMORY_H__
+
+  #include &quot;stdint.h&quot;
+  #include &quot;bitmap.h&quot;
+
+
+  //虚拟地址池
+  struct virtual_addr&#123;
+      struct bitmap vaddr_bitmap;
+      uint32_t vaddr_start;
+  &#125;;
+
+  extern struct pool kernel_pool,user_pool;
+
+  void men_init(void);
+
+
+  #endif
+</code></pre>
+</li>
+<li><p>kernel&#x2F;memory.c:</p>
+<pre><code>  #include &quot;memory.h&quot;
+  #include &quot;stdint.h&quot;
+  #include &quot;print.h&quot;
+
+  #define PG_SIZE 4096
+
+  //0xc009f00是内核栈栈顶，0xc009e00分给内核主线程PCB,0xc009a00~0xc009e00这四个页的空间大小全给位图(可管理一共512MB空间)
+  #define MEM_BITMAP_BASE 0xc009a000
+  #define K_HEAP_START 0xc0100000
+
+
+  //物理内存池
+  struct pool&#123;
+      struct bitmap pool_bitmap;
+      uint32_t phy_addr_start;
+      uint32_t pool_size;
+  &#125;;
+
+  struct pool kernel_pool,user_pool;
+
+  struct virtual_addr kernel_vaddr;
+
+  static void mem_pool_init(uint32_t all_mem)&#123;
+      put_str(&quot; mem_pool_init start\n&quot;);
+
+      //从物理地址0x100000开始往上，一共有一个页目录和255个页表，总共256个页表
+      uint32_t page_table_size=PG_SIZE*256;
+      //加上0x100000后就是我们可以使用的物理地址起始地址
+      uint32_t used_mem=page_table_size+0x100000;
+
+      uint32_t free_mem=all_mem-used_mem;
+      uint16_t all_free_pages=free_mem/PG_SIZE;
+      
+      uint16_t kernel_free_pages=all_free_pages/2;
+      uint16_t user_free_pages=all_free_pages-kernel_free_pages;
+
+      //一字节位图可以代表8页
+      uint32_t kbm_length=kernel_free_pages/8;
+      uint32_t ubm_length=user_free_pages/8;
+
+      uint32_t kp_start=used_mem;
+      uint32_t up_start=kp_start+kernel_free_pages*PG_SIZE;
+
+      kernel_pool.phy_addr_start=kp_start;
+      user_pool.phy_addr_start=up_start;
+
+      kernel_pool.pool_size=kernel_free_pages*PG_SIZE;
+      user_pool.pool_size=user_free_pages*PG_SIZE;
+
+      kernel_pool.pool_bitmap.btmp_bytes_len=kbm_length;
+      user_pool.pool_bitmap.btmp_bytes_len=ubm_length;
+
+      kernel_pool.pool_bitmap.btmp_ptr=(void*)MEM_BITMAP_BASE;
+      user_pool.pool_bitmap.btmp_ptr=(void*)(MEM_BITMAP_BASE+kbm_length);
+
+      put_str(&quot;       kernel_pool_bitmap_start:&quot;);
+      put_int((int)kernel_pool.pool_bitmap.btmp_ptr);
+      put_str(&quot;   kernel_pool_phy_addr_start:&quot;);
+      put_int((int)kernel_pool.phy_addr_start);
+      put_str(&quot;\n&quot;);
+
+      put_str(&quot;       user_pool_bitmap_start:&quot;);
+      put_int((int)user_pool.pool_bitmap.btmp_ptr);
+      put_str(&quot;   user_pool_phy_addr_start:&quot;);
+      put_int((int)user_pool.phy_addr_start);
+      put_str(&quot;\n&quot;);
+
+      bitmap_init(&amp;kernel_pool.pool_bitmap);
+      bitmap_init(&amp;user_pool.pool_bitmap);
+
+      
+      //初始化内核虚拟内存池
+      kernel_vaddr.vaddr_bitmap.btmp_bytes_len=kbm_length;
+      kernel_vaddr.vaddr_bitmap.btmp_ptr=(void*)(MEM_BITMAP_BASE+kbm_length+ubm_length);
+      kernel_vaddr.vaddr_start=K_HEAP_START;
+      bitmap_init(&amp;kernel_vaddr.vaddr_bitmap);
+      put_str(&quot;   mem_pool_init done\n&quot;);
+      
+  &#125;
+
+
+  void mem_init()&#123;
+      put_str(&quot;mem_init start\n&quot;);
+      uint32_t mem_bytes_total=(*(uint32_t*)(0xb03));//我们计算出来的地址存到0xb03里
+      mem_pool_init(mem_bytes_total);
+      put_str(&quot;mem_init done\n&quot;);
+  &#125;
+</code></pre>
+</li>
+</ul>
+<h2 id="内存管理系统第一步，分配内存页"><a href="#内存管理系统第一步，分配内存页" class="headerlink" title="内存管理系统第一步，分配内存页"></a>内存管理系统第一步，分配内存页</h2><p>我们已经完成内存池的规划以及初始化函数，现在我们要实现malloc函数（我们实现的malloc函数只能以页为单位分配），实现系统调用分配内存。</p>
+<p>malloc_page的逻辑如下：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img6.png" alt="img"></p>
+<p>其中page_table_add(vaddr,page_phyaddr)的逻辑较为复制，因此绘制其流程图：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%85%AB%EF%BC%89/img7.png" alt="img"></p>
+<p>代码如下：</p>
+<ul>
+<li><p>kernel&#x2F;memory.c(增加部分):</p>
+<pre><code>  #include &quot;memory.h&quot;
+  #include &quot;stdint.h&quot;
+  #include &quot;print.h&quot;
+  #include &quot;bitmap.h&quot;
+  #include &quot;global.h&quot;
+  #include &quot;debug.h&quot;
+  #include &quot;string.h&quot;
+
+
+  #define PDE_IDX(addr)   ((addr &amp; 0xffc00000)&gt;&gt;22)
+  #define PTE_IDX(addr)   ((addr &amp; 0x003ff000)&gt;&gt;12)
+
+  #define PG_SIZE 4096
+
+
+
+  //  内核/用户 向虚拟内存池申请连续个pg_cnt个虚拟地址，成功返回地址起点，失败返回-1
+  static void* vaddr_get(enum pool_flags pf,uint32_t pg_cnt)&#123;
+      int vaddr_start=0,bit_idx_start=-1;
+      uint32_t cnt=0;
+      if( pf ==PF_KERNEL)&#123;
+          bit_idx_start=bitmap_scan(&amp;kernel_vaddr.vaddr_bitmap,pg_cnt);
+          if(bit_idx_start==-1)&#123;
+              return NULL;
+          &#125;
+          while(cnt&lt;pg_cnt)&#123;
+              bitmap_set(&amp;kernel_vaddr.vaddr_bitmap,bit_idx_start+cnt++,1);
+          &#125;
+          vaddr_start=kernel_vaddr.vaddr_start+bit_idx_start*PG_SIZE;
+      &#125;else&#123;
+          //用户内存池，将来实现
+      &#125;
+      return (void*)vaddr_start;
+  &#125;
+
+  // 内核/用户 向物理内存池申请连续1页，成功返回地址起点，失败返回-1
+  static void* palloc(struct pool* m_pool)&#123;
+      int bit_idx_start=bitmap_scan(&amp;m_pool-&gt;pool_bitmap,1);
+      if(bit_idx_start==-1)&#123;
+          return NULL;
+      &#125;
+      bitmap_set(&amp;m_pool-&gt;pool_bitmap,bit_idx_start,1);
+      uint32_t page_phyaddr=((bit_idx_start*PG_SIZE)+m_pool-&gt;phy_addr_start);
+      return (void*)page_phyaddr;
+  &#125;
+
+  //得到虚拟地址vaddr对应的pte指针
+  uint32_t* pte_ptr(uint32_t vaddr)&#123;
+      //该公式见第五章关于页目录自映射
+      uint32_t* pte=(uint32_t*)(0xffc00000+ ((vaddr &amp; 0xffc00000)&gt;&gt;10)+PTE_IDX(vaddr)*4);
+      return pte;
+  &#125;
+
+  //得到虚拟地址vaddr对应的pde指针
+  uint32_t* pde_ptr(uint32_t vaddr)&#123;
+      //该公式见第五章关于页目录自映射
+      uint32_t* pde=(uint32_t*)((0xfffff000) + PDE_IDX(vaddr)*4);
+      return pde;
+  &#125;
+
+
+  //建立从虚拟地址到物理地址的映射
+  static void page_table_add(void* _vaddr,void* _page_phyaddr)&#123;
+      uint32_t vaddr=(uint32_t)_vaddr,page_phyaddr=(uint32_t)_page_phyaddr;
+
+      //指针本身就是虚拟地址
+      uint32_t* pde=pde_ptr(vaddr);
+      uint32_t* pte=pte_ptr(vaddr);
+
+
+      if(*pde &amp; 0x00000001)&#123;
+          ASSERT(!(*pte &amp; 0x00000001));
+          if(!(*pte &amp; 0x00000001))&#123;
+              *pte=(page_phyaddr|PG_US_U|PG_RW_W|PG_P_1);
+          &#125;else&#123;
+              PANIC(&quot;pte repeat&quot;);
+              *pte=(page_phyaddr|PG_US_U|PG_RW_W|PG_P_1);
+          &#125;
+      &#125;else&#123;
+          //这儿为页表申请地址，pde_phyaddr记录的其实是页表的其实地址
+          uint32_t pde_phyaddr=(uint32_t)palloc(&amp;kernel_pool);
+          *pde=(pde_phyaddr|PG_US_U|PG_RW_W|PG_P_1);
+          
+          memset((void*)((int)pte &amp; 0xfffff000),0,PG_SIZE);
+
+          ASSERT(!(*pte &amp; 0x00000001));
+
+          *pte=(page_phyaddr|PG_US_U|PG_RW_W|PG_P_1);
+      &#125;
+
+  &#125;
+
+  //实现自己的以页为单位分配空间的malloc函数,成功返回起始虚拟地址,失败返回NULL
+  void* malloc_page(enum pool_flags pf,uint32_t pg_cnt)&#123;
+
+      //分配的页不能超过真实物理内存的一半（16MB，我们取整就是3840页）
+      ASSERT(pg_cnt&gt;0 &amp;&amp; pg_cnt&lt;3840);
+
+      void* vaddr_start = vaddr_get(pf,pg_cnt);
+      if(vaddr_start==NULL)&#123;
+          return NULL;
+      &#125;
+
+      uint32_t vaddr=(uint32_t)vaddr_start,cnt=pg_cnt;
+
+      struct pool* mem_pool=pf &amp; PF_KERNEL? &amp;kernel_pool:&amp;user_pool;
+
+      while(cnt-- &gt;0)&#123;
+          void* page_phyaddr =palloc(mem_pool);
+          if(page_phyaddr==NULL)&#123;
+              return NULL;
+          &#125;
+          page_table_add((void*)vaddr,page_phyaddr);
+          vaddr+=PG_SIZE;
+      &#125;
+      
+      return vaddr_start;
+  &#125;
+
+
+  //从内核物理内存池里获取pg_cnt页内存，成功则返回虚拟地址
+  void* get_kernel_pages(uint32_t pg_cnt)&#123;
+
+      void* vaddr=malloc_page(PF_KERNEL,pg_cnt);
+
+      //将申请的空间请0
+      if(vaddr!=NULL)&#123;
+          memset(vaddr,0,pg_cnt*PG_SIZE);
+      &#125;
+      return vaddr;
+  &#125;
+</code></pre>
+</li>
+<li><p>kernel&#x2F;memory.h:</p>
+<pre><code>  #ifndef __KERNEL_MEMORY_H__
+  #define __KERNEL_MEMORY_H__
+
+  #include &quot;stdint.h&quot;
+  #include &quot;bitmap.h&quot;
+
+  //虚拟地址池
+  struct virtual_addr&#123;
+      struct bitmap vaddr_bitmap;
+      uint32_t vaddr_start;
+  &#125;;
+
+  enum pool_flags&#123;
+      PF_KERNEL=1,
+      PF_USER=3
+  &#125;;
+
+  #define PG_P_1      1
+  #define PG_P_0      0
+  #define PG_Rw_R     0
+  #define PG_RW_W     2
+  #define PG_US_S     0
+  #define PG_US_U     4
+
+
+  extern struct pool kernel_pool,user_pool;
+
+
+  void mem_init(void);
+  uint32_t* pte_ptr(uint32_t vaddr);
+  uint32_t* pde_ptr(uint32_t vaddr);
+  void* malloc_page(enum pool_flags pf,uint32_t pg_cnt);
+  void* get_kernel_pages(uint32_t pg_cnt);
+
+  #endif
+</code></pre>
+</li>
+</ul>
+<h2 id="调试："><a href="#调试：" class="headerlink" title="调试："></a>调试：</h2><p>最后可以通过<code>info tab</code>来查看新建立的映射是否正确,并且可以通过<code>page 页虚拟地址</code>来查看该线性页落到哪一个物理页上</p>
+<ul>
+<li><p>makefile(更新过):</p>
+<pre><code>  BUILD_DIR = ./build
+  ENTRY_POINT = 0xc0001500
+  AS = nasm
+  CC = gcc
+  LD = ld
+  LIB = -I lib/ -I lib/kernel/ -I lib/user/ -I kernel/ -I device/ 
+  ASFLAGS = -f elf
+
+  CFLAGS = -Wall -m32 -fno-stack-protector $(LIB) -c -fno-builtin -W -Wstrict-prototypes -Wmissing-prototypes
+  # -fno-stack-protector 闭栈保护的编译选项，栈保护作用是禁止编译器在函数的栈帧中插入栈保护符号，以防止栈溢出攻击。
+  # -fno-builtin 告诉编译器不要采用内部函数，因为我们以后会自定义与内部函数同名的函数
+  # -Wall 启动所有警告
+  # -W 启动常见警告
+  # -Wstrict-prototypes  要求函数声明中必须有参数类型，否则警告
+  # -Wmissing-prototypes 要求函数必须声明，否则警告
+
+  LDFLAGS =  -m elf_i386 -Ttext $(ENTRY_POINT) -e main -Map $(BUILD_DIR)/kernel.map
+  # -Map $(BUILD_DIR)/kernel.map  输出文件build/kernel.map。用于记录kernel符号地址
+
+  OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
+      $(BUILD_DIR)/timer.o $(BUILD_DIR)/kernel.o $(BUILD_DIR)/print.o \
+      $(BUILD_DIR)/debug.o $(BUILD_DIR)/string.o $(BUILD_DIR)/memory.o \
+      $(BUILD_DIR)/bitmap.o
+  # 定义目标文件名集合，用于ld时依赖文件项
+
+
+  ##############     c代码编译     			###############
+  $(BUILD_DIR)/main.o: kernel/main.c lib/kernel/print.h \
+          lib/stdint.h kernel/init.h lib/string.h kernel/memory.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/init.o: kernel/init.c kernel/init.h lib/kernel/print.h \
+          lib/stdint.h kernel/interrupt.h device/timer.h kernel/memory.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/interrupt.o: kernel/interrupt.c kernel/interrupt.h \
+          lib/stdint.h kernel/global.h lib/kernel/io.h lib/kernel/print.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/timer.o: device/timer.c device/timer.h lib/stdint.h\
+          lib/kernel/io.h lib/kernel/print.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/debug.o: kernel/debug.c kernel/debug.h \
+          lib/kernel/print.h lib/stdint.h kernel/interrupt.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/string.o: lib/string.c lib/string.h \
+          kernel/debug.h kernel/global.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+      
+  $(BUILD_DIR)/memory.o: kernel/memory.c kernel/memory.h \
+          lib/stdint.h lib/kernel/bitmap.h kernel/debug.h lib/string.h \
+          lib/kernel/print.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+      
+  $(BUILD_DIR)/bitmap.o: lib/kernel/bitmap.c lib/kernel/bitmap.h \
+          lib/string.h kernel/interrupt.h lib/kernel/print.h kernel/debug.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+  ##############     c代码编译     			###############
+
+
+  ##############    汇编代码编译    ###############
+  $(BUILD_DIR)/kernel.o: kernel/kernel.S
+      $(AS) $(ASFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/print.o: lib/kernel/print.S
+      $(AS) $(ASFLAGS) $&lt; -o $@
+  ##############    汇编代码编译    ###############
+
+
+  ##############    链接所有目标文件    #############
+  $(BUILD_DIR)/kernel.bin: $(OBJS)
+      $(LD) $(LDFLAGS) $^ -o $@
+  ##############    链接所有目标文件    #############
+
+
+  ################  伪目标 ###############################
+  .PHONY : mk_dir hd clean build all
+
+  mk_dir:
+      if [ ! -d $(BUILD_DIR) ]; then mkdir $(BUILD_DIR); fi
+
+  hd:
+      dd if=$(BUILD_DIR)/kernel.bin \
+          of=/home/sparkle2/bochs/hd60M.img \
+          bs=512 count=200 seek=9 conv=notrunc
+
+  clean:
+      cd $(BUILD_DIR) &amp;&amp; rm -f  ./*
+
+  build: $(BUILD_DIR)/kernel.bin
+
+  all: mk_dir build hd
+  ################  伪目标 ###############################
+</code></pre>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/11/24/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%83%EF%BC%89/" rel="prev" title="自制简易操作系统（七）">
+                  <i class="fa fa-angle-left"></i> 自制简易操作系统（七）
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2023/11/29/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/" rel="next" title="自制简易操作系统（九）">
+                  自制简易操作系统（九） <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Sparkle</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
