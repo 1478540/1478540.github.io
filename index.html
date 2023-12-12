@@ -116,7 +116,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">11</span>
+          <span class="site-state-item-count">12</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -134,6 +134,1126 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/30/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%EF%BC%89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Sparkle">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sparkle's Space">
+      <meta itemprop="description" content="If there is no torchlight in the future, I will be the only light.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | Sparkle's Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2023/11/30/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%EF%BC%89/" class="post-title-link" itemprop="url">自制简易操作系统（十）</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2023-11-30 16:15:51" itemprop="dateCreated datePublished" datetime="2023-11-30T16:15:51+08:00">2023-11-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2023-12-12 12:30:58" itemprop="dateModified" datetime="2023-12-12T12:30:58+08:00">2023-12-12</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="同步机制——锁"><a href="#同步机制——锁" class="headerlink" title="同步机制——锁"></a>同步机制——锁</h1><p>当多个线程共同使用一样公共资源时，就有可能会出现竞争问题。在我们上一章节主线程、A线程和B线程都在打印字符，显存以及put_str()就是我们的公共资源。正是因为竞争问题，所以在上一章节中运行过程会出现字符串错误，并且运行到最后会报错(显存越界)。</p>
+<p>所以我们需要实现一个锁，只有持有锁的人才能操作公共资源。我们将使用二元信号量实现锁的同步机制。</p>
+<p>函数逻辑关系如图：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%EF%BC%89/img1.png" alt="img"></p>
+<p>代码如下：</p>
+<ul>
+<li><p>thread&#x2F;thread.c(新增部分)</p>
+<pre><code>  void thread_block(enum task_status stat)&#123;
+      ASSERT((stat==TASK_BLOCKED)||(stat==TASK_HANGING)||(stat==TASK_WAITING));
+      enum intr_status old_status=intr_disable();
+
+      struct task_struct* cur_thread=running_thread();
+      cur_thread-&gt;status=stat;
+      schedule();
+
+      intr_set_status(old_status);
+  &#125;
+
+  void thread_unblock(struct task_struct* pthread)&#123;
+      enum intr_status old_status=intr_disable();
+
+      ASSERT((pthread-&gt;status==TASK_BLOCKED)||(pthread-&gt;status==TASK_HANGING)||(pthread-&gt;status==TASK_WAITING));
+      if(pthread-&gt;status!=TASK_READY)&#123;
+          ASSERT(!elem_fimd(&amp;thread_ready_list,&amp;pthread-&gt;general_tag));
+          if(elem_fimd(&amp;thread_ready_list,&amp;pthread-&gt;general_tag))&#123;
+              PANIC(&quot;thread_unblock:blocked thread in ready_list\n&quot;);
+          &#125;
+          list_push(&amp;thread_ready_list,&amp;pthread-&gt;general_tag);
+          pthread-&gt;status=TASK_READY;
+      &#125;
+
+      intr_set_status(old_status);
+  &#125;
+</code></pre>
+</li>
+<li><p>thread&#x2F;sync.h</p>
+<pre><code>  #ifndef __THREAD_SYNC_H__
+  #define __THREAD_SYNC_H__
+
+  #include &quot;list.h&quot;
+  #include &quot;stdint.h&quot;
+  #include &quot;thread.h&quot;
+
+
+  struct semaphore&#123;
+      uint8_t value;
+      struct list waiters;
+  &#125;;
+
+
+  struct lock&#123;
+      struct task_struct* holder;
+      struct semaphore semaphore;  //用二元信号量实现锁
+      uint32_t holder_repeat_nr;
+  &#125;;
+
+  void sema_init(struct semaphore* psema,uint8_t value);
+  void lock_init(struct lock* plock);
+  void sema_down(struct semaphore* psema);
+  void sema_up(struct semaphore* psema);
+  void lock_acquire(struct lock* plock);
+  void lock_release(struct lock* plock);
+
+  #endif
+</code></pre>
+</li>
+<li><p>thread&#x2F;sync.c</p>
+<pre><code>  #include &quot;sync.h&quot;
+
+  void sema_init(struct semaphore* psema,uint8_t value)&#123;
+
+      psema-&gt;value=value;
+      list_init(&amp;psema-&gt;waiters);
+
+  &#125;
+
+  void lock_init(struct lock* plock)&#123;
+      plock-&gt;holder=NULL;
+      plock-&gt;holder_repeat_nr=0;
+      sema_init(&amp;plock-&gt;semaphore,1);
+  &#125;
+
+
+  //信号量-1操作
+  void sema_down(struct semaphore* psema)&#123;
+      enum intr_status old_status=intr_disable();
+
+      while(psema-&gt;value==0)&#123;
+          ASSERT(!elem_find(&amp;psema-&gt;waiters,&amp;running_thread()-&gt;general_tag));
+
+          if(elem_find(&amp;psema-&gt;waiters,&amp;running_thread()-&gt;general_tag))&#123;
+              PANIC(&quot;sema_down:thread blocked has been in waiters_list\n&quot;);
+          &#125;
+
+          list_append(&amp;psema-&gt;waiters,&amp;running_thread()-&gt;general_tag);
+          thread_block(TASK_BLOCKED);
+      &#125;
+      psema-&gt;value--;
+      ASSERT(psema-&gt;value==0);
+
+      intr_set_status(old_status);
+  &#125;
+
+  //信号量+1操作
+  void sema_up(struct semaphore* psema)&#123;
+      enum intr_status old_status=intr_disable();
+      
+      ASSERT(psema-&gt;value==0);
+      if(!list_empty(&amp;psema-&gt;waiters))&#123;
+          struct task_struct* thread_blocked =elem2entry(struct task_struct, general_tag,list_pop(&amp;psema-&gt;waiters));
+          thread_unblock(thread_blocked);
+      &#125;
+      psema-&gt;value++;
+      ASSERT(psema-&gt;value==1);
+
+      intr_set_stauts(old_status);
+  &#125;
+
+  //获取锁plock
+  void lock_acquire(struct lock* plock)&#123;
+      if(plock-&gt;holder!=running_thread())&#123;
+          sema_down(&amp;plock-&gt;semaphore);
+          plock-&gt;holder=running_thread();
+          ASSERT(plock-&gt;holder_repeat_nr==0);
+          plock-&gt;holder_repeat_nr=1;
+      &#125;else&#123;
+          plock-&gt;holder_repeat_nr++;
+      &#125;
+  &#125;
+
+  //释放锁plock
+  void lock_release(struct lock* plock)&#123;
+      ASSERT(plock-&gt;holder==running_thread());
+      if(plock-&gt;holder_repeat_nr&gt;1)&#123;
+          plock-&gt;holder_repeat_nr--;
+          return;
+      &#125;
+      ASSERT(plock-&gt;holder_repeat_nr==1);
+      
+      plock-&gt;holder=NULL;
+      plock-&gt;holder_repeat_nr=0;
+      sema_up(&amp;plock-&gt;semaphore);
+  &#125;
+</code></pre>
+</li>
+</ul>
+<p>接下来我们将在控制台作为一个公共资源，在控制台上打印字符就必须获得控制台的锁，实现代码如下</p>
+<ul>
+<li><p>device&#x2F;console.h</p>
+<pre><code>  #ifndef __DEVICE_CONSOLE_H__
+  #define __DEVICE_CONSOLE_H__
+  #include &quot;stdint.h&quot;
+
+  void console_init(void);
+
+  void console_release(void);
+
+  void console_acquire(void);
+
+  void console_put_char(uint8_t char_asci);
+
+  void console_put_str(char* str);
+
+  void console_put_int(uint32_t num);
+
+  #endif
+</code></pre>
+</li>
+<li><p>device&#x2F;console.c</p>
+<pre><code>  #include &quot;console.h&quot;
+  #include &quot;print.h&quot;
+  #include &quot;stdint.h&quot;
+  #include &quot;sync.h&quot;
+  #include &quot;thread.h&quot;
+
+  static struct lock console_lock;
+
+  void console_init()&#123;
+      lock_init(&amp;console_lock);
+  &#125;
+
+  void console_release()&#123;
+      lock_release(&amp;console_lock);
+  &#125;
+
+  void console_acquire()&#123;
+      lock_acquire(&amp;console_lock);
+  &#125;
+
+  void console_put_char(uint8_t char_asci)&#123;
+      console_acquire();
+      put_char(char_asci);
+      console_release();
+  &#125;
+
+  void console_put_str(char* str)&#123;
+      console_acquire();
+      put_str(str);
+      console_release();  
+  &#125;
+
+  void console_put_int(uint32_t num)&#123;
+      console_acquire();
+      put_int(num);
+      console_release();  
+  &#125;
+</code></pre>
+</li>
+<li><p>kernel&#x2F;main.c(将原本的put_str()换成console_put_str())</p>
+<pre><code>  #include &quot;print.h&quot;
+  #include &quot;init.h&quot;
+  #include &quot;debug.h&quot;
+  #include &quot;memory.h&quot;
+  #include &quot;thread.h&quot;
+  #include &quot;console.h&quot;
+
+  void k_thread_a(void*);
+  void k_thread_b(void*);
+
+  int main(void) &#123;
+  put_str(&quot;I am kernel\n&quot;);
+  init_all();
+
+
+  thread_start(&quot;k_thread_a&quot;,31,k_thread_a,&quot;argA &quot;);
+  thread_start(&quot;k_thread_b&quot;,8,k_thread_b,&quot;argB &quot;);
+
+  intr_enable();
+  while(1)&#123;
+      console_put_str(&quot;Main &quot;);
+  &#125;;
+  
+  return 0;
+  &#125;
+
+
+  //在线程中运行的函数
+  void k_thread_a(void* arg)&#123;
+  //被调用的函数知道自己需要什么类型的参数，自己转换再用
+  char* para=arg;
+
+  while(1)&#123;
+      console_put_str(para);
+  &#125;
+  &#125;
+
+  void k_thread_b(void* arg)&#123;
+  //被调用的函数知道自己需要什么类型的参数，自己转换再用
+  char* para=arg;
+
+  while(1)&#123;
+      console_put_str(para);
+  &#125;
+  &#125;
+</code></pre>
+</li>
+</ul>
+<p>我们就可以正确的打印字符而不报错了。</p>
+<h1 id="编写键盘驱动程序"><a href="#编写键盘驱动程序" class="headerlink" title="编写键盘驱动程序"></a>编写键盘驱动程序</h1><p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%EF%BC%89/img2.png" alt="img"></p>
+<p>如上图所示，键盘上有芯片8048用于捕获按键的扫描码并传递给8042，8042是再主机上的键盘控制器负责CPU和键盘之间的沟通，8042会将从8048里收到的不同格式的扫描码统一成第一套键盘扫描码并向8259A发送键盘中断信号，8259A就是我们的老朋友了，用于中断管理。</p>
+<p>工作流程如下：每当我们按下键盘的任一一个按键时，8048会捕获该按键的扫描码并发送给8042。8042接受扫描码后会将其翻译成第一套键盘扫描码(统一格式)，每一个按键的扫描码可能是一个字节也可能是两个字节（甚至可能是多个字节）。但8042只会一个字节一个字节的放到自己的缓冲区里并通知CPU来取数据(通过键盘中断),CPU不取走上一个数据，8042就不会放下一个数据，如此循环直到键盘按键的所有信息都被传输给了CPU</p>
+<p>第一套键盘扫描码格式如下：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%EF%BC%89/img3.png" alt="img"></p>
+<p>8048工作内容以及寄存器如下：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%EF%BC%89/img4.png" alt="img"></p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%EF%BC%89/img5.png" alt="img"></p>
+<p><strong>PS：在8048中的4个寄存器我们只需要从0x60的输出缓冲区里不断读取数据</strong></p>
+<p>写下来我们要编写键盘驱动程序，键盘驱动程序的核心就是一个中断处理函数intr_keyboard_handler(void);该函数负责把从8042中取得的第一套扫描码转化成相应的ASCII码，然后用put_char()输出。</p>
+<p>看上去很简单对吧，但这是在没有组合键的请看下，组合键shift、Ctrl、Capslk让一切都变得有些麻烦(当我们按下组合键时并不会输入任何字符，但是当我们同时搭配组合键和普通按键时却会改变普通按键的功能)，请直接看代码。</p>
+<ul>
+<li><p>kernel&#x2F;kernel.S(添加几个中断入口，支持的中断数由原本的33个变成48个)</p>
+<pre><code>  VECTOR 0X20 ,ZERO					;时钟中断
+  VECTOR 0X21 ,ZERO					;键盘中断
+  VECTOR 0X22 ,ZERO					;级联
+  VECTOR 0X23 ,ZERO					;串口2
+  VECTOR 0X24 ,ZERO					;串口1
+  VECTOR 0X25 ,ZERO					;并口2
+  VECTOR 0X26 ,ZERO					;软盘
+  VECTOR 0X27 ,ZERO					;并口1
+  VECTOR 0X28 ,ZERO					;实时时钟
+  VECTOR 0X29 ,ZERO					;重定向
+  VECTOR 0X2A ,ZERO					;保留
+  VECTOR 0x2B ,ZERO					;保留
+  VECTOR 0x2C ,ZERO					;ps/2 鼠标
+  VECTOR 0x2D ,ZERO					;fpu 浮点单元异常
+  VECTOR 0x2E ,ZERO					;硬盘
+  VECTOR 0x2F ,ZERO					;保留
+</code></pre>
+</li>
+<li><p>device&#x2F;keyboard.c</p>
+<pre><code>  #include &quot;keyboard.h&quot;
+  #include &quot;print.h&quot;
+  #include &quot;interrupt.h&quot;
+  #include &quot;io.h&quot;
+  #include &quot;global.h&quot;
+  #include &quot;stdint.h&quot;
+
+  #define KBD_BUF_PORT 0x60
+
+  //定义部分字符控制键的转义字符（可直接用put_char处理）
+  #define esc     &#39;\0x33&#39;     //八进制ASCII码转义
+  #define backspace &#39;\b&#39;
+  #define tab       &#39;\t&#39;
+  #define enter       &#39;\r&#39;
+  #define delete      &#39;\177&#39;  //八进制ASCII码转义
+
+  //定义不可见字符为0
+  #define char_invisible 0
+  #define ctrl_l_char char_invisible
+  #define ctrl_r_char char_invisible
+  #define shift_l_char char_invisible
+  #define shift_r_char char_invisible
+  #define alt_l_char char_invisible
+  #define alt_r_char char_invisible
+  #define caps_lock_char char_invisible
+
+
+  //定义控制字符的通码和断码
+  #define shift_l_make 0x2a
+  #define shift_r_make 0x36
+  #define alt_l_make 0x38
+  #define alt_r_make 0xe038
+  #define alt_r_break 0xe0b8
+  #define ctrl_l_make 0x1d
+  #define ctrl_r_make 0xe01d
+  #define ctrl_r_break 0xe09d
+  #define caps_lock_make 0x3a
+
+
+  bool ctrl_status = false,shift_status = false,alt_status = false,caps_lock_status = false,ext_scancode = false;
+
+
+  //该二维数组的索引是扫描码，元素0代表未按下shift键时的输出字符，元素1代表按下shift键时的输出字符
+  char keymap[][2] = &#123;
+  /* 0x00 */	&#123;0,	0&#125;,		
+  /* 0x01 */	&#123;esc,	esc&#125;,		
+  /* 0x02 */	&#123;&#39;1&#39;,	&#39;!&#39;&#125;,		
+  /* 0x03 */	&#123;&#39;2&#39;,	&#39;@&#39;&#125;,		
+  /* 0x04 */	&#123;&#39;3&#39;,	&#39;#&#39;&#125;,		
+  /* 0x05 */	&#123;&#39;4&#39;,	&#39;$&#39;&#125;,		
+  /* 0x06 */	&#123;&#39;5&#39;,	&#39;%&#39;&#125;,		
+  /* 0x07 */	&#123;&#39;6&#39;,	&#39;^&#39;&#125;,		
+  /* 0x08 */	&#123;&#39;7&#39;,	&#39;&amp;&#39;&#125;,		
+  /* 0x09 */	&#123;&#39;8&#39;,	&#39;*&#39;&#125;,		
+  /* 0x0A */	&#123;&#39;9&#39;,	&#39;(&#39;&#125;,		
+  /* 0x0B */	&#123;&#39;0&#39;,	&#39;)&#39;&#125;,		
+  /* 0x0C */	&#123;&#39;-&#39;,	&#39;_&#39;&#125;,		
+  /* 0x0D */	&#123;&#39;=&#39;,	&#39;+&#39;&#125;,		
+  /* 0x0E */	&#123;backspace, backspace&#125;,	
+  /* 0x0F */	&#123;tab,	tab&#125;,		
+  /* 0x10 */	&#123;&#39;q&#39;,	&#39;Q&#39;&#125;,		
+  /* 0x11 */	&#123;&#39;w&#39;,	&#39;W&#39;&#125;,		
+  /* 0x12 */	&#123;&#39;e&#39;,	&#39;E&#39;&#125;,		
+  /* 0x13 */	&#123;&#39;r&#39;,	&#39;R&#39;&#125;,		
+  /* 0x14 */	&#123;&#39;t&#39;,	&#39;T&#39;&#125;,		
+  /* 0x15 */	&#123;&#39;y&#39;,	&#39;Y&#39;&#125;,		
+  /* 0x16 */	&#123;&#39;u&#39;,	&#39;U&#39;&#125;,		
+  /* 0x17 */	&#123;&#39;i&#39;,	&#39;I&#39;&#125;,		
+  /* 0x18 */	&#123;&#39;o&#39;,	&#39;O&#39;&#125;,		
+  /* 0x19 */	&#123;&#39;p&#39;,	&#39;P&#39;&#125;,		
+  /* 0x1A */	&#123;&#39;[&#39;,	&#39;&#123;&#39;&#125;,		
+  /* 0x1B */	&#123;&#39;]&#39;,	&#39;&#125;&#39;&#125;,		
+  /* 0x1C */	&#123;enter,  enter&#125;,
+  /* 0x1D */	&#123;ctrl_l_char, ctrl_l_char&#125;,
+  /* 0x1E */	&#123;&#39;a&#39;,	&#39;A&#39;&#125;,		
+  /* 0x1F */	&#123;&#39;s&#39;,	&#39;S&#39;&#125;,		
+  /* 0x20 */	&#123;&#39;d&#39;,	&#39;D&#39;&#125;,		
+  /* 0x21 */	&#123;&#39;f&#39;,	&#39;F&#39;&#125;,		
+  /* 0x22 */	&#123;&#39;g&#39;,	&#39;G&#39;&#125;,		
+  /* 0x23 */	&#123;&#39;h&#39;,	&#39;H&#39;&#125;,		
+  /* 0x24 */	&#123;&#39;j&#39;,	&#39;J&#39;&#125;,		
+  /* 0x25 */	&#123;&#39;k&#39;,	&#39;K&#39;&#125;,		
+  /* 0x26 */	&#123;&#39;l&#39;,	&#39;L&#39;&#125;,		
+  /* 0x27 */	&#123;&#39;;&#39;,	&#39;:&#39;&#125;,		
+  /* 0x28 */	&#123;&#39;\&#39;&#39;,	&#39;&quot;&#39;&#125;,		
+  /* 0x29 */	&#123;&#39;`&#39;,	&#39;~&#39;&#125;,		
+  /* 0x2A */	&#123;shift_l_char, shift_l_char&#125;,	
+  /* 0x2B */	&#123;&#39;\\&#39;,	&#39;|&#39;&#125;,		
+  /* 0x2C */	&#123;&#39;z&#39;,	&#39;Z&#39;&#125;,		
+  /* 0x2D */	&#123;&#39;x&#39;,	&#39;X&#39;&#125;,		
+  /* 0x2E */	&#123;&#39;c&#39;,	&#39;C&#39;&#125;,		
+  /* 0x2F */	&#123;&#39;v&#39;,	&#39;V&#39;&#125;,		
+  /* 0x30 */	&#123;&#39;b&#39;,	&#39;B&#39;&#125;,		
+  /* 0x31 */	&#123;&#39;n&#39;,	&#39;N&#39;&#125;,		
+  /* 0x32 */	&#123;&#39;m&#39;,	&#39;M&#39;&#125;,		
+  /* 0x33 */	&#123;&#39;,&#39;,	&#39;&lt;&#39;&#125;,		
+  /* 0x34 */	&#123;&#39;.&#39;,	&#39;&gt;&#39;&#125;,		
+  /* 0x35 */	&#123;&#39;/&#39;,	&#39;?&#39;&#125;,
+  /* 0x36	*/	&#123;shift_r_char, shift_r_char&#125;,	
+  /* 0x37 */	&#123;&#39;*&#39;,	&#39;*&#39;&#125;,    	
+  /* 0x38 */	&#123;alt_l_char, alt_l_char&#125;,
+  /* 0x39 */	&#123;&#39; &#39;,	&#39; &#39;&#125;,		
+  /* 0x3A */	&#123;caps_lock_char, caps_lock_char&#125;
+  &#125;;
+
+
+  static void intr_kerboard_handler(void)&#123;
+
+      bool ctrl_down_last=ctrl_status;
+      bool shift_down_last=shift_status;
+      bool caps_lock_last=caps_lock_status;
+
+      bool break_code;
+      uint16_t scancode=inb(KBD_BUF_PORT);//必须读取缓冲区数据，否则8042不再继续响应键盘中断
+
+      //打开拓展标志，并返回，（说明要接受的扫描码不止1字节，有两字节）
+      if(scancode == 0xe0)&#123;
+          ext_scancode=true;
+          return;
+      &#125;
+
+      if(ext_scancode)&#123;
+          scancode=(0xe000|scancode);
+          ext_scancode=false;
+      &#125;
+
+
+      //true则代表是断码，否则是通码
+      break_code=((scancode&amp;0x0080)!=0);
+
+      if(break_code)&#123;
+          uint16_t make_code=(scancode&amp;=0xff7f);
+
+          //改变状态
+          if(make_code==ctrl_l_make||make_code==ctrl_r_make)&#123;
+              ctrl_status=false;
+          &#125;else if(make_code == shift_l_make || make_code==shift_r_make)&#123;
+              shift_status=false;
+          &#125;else if(make_code == alt_l_make || make_code ==alt_r_make)&#123;
+              alt_status=false;
+          &#125;
+
+          return;
+      &#125;else if((scancode&gt;0x00 &amp;&amp; scancode&lt;0x3b)||(scancode == alt_r_make)||(scancode ==ctrl_r_make))&#123;
+          
+          //shift用于判断keymap到底是要输出元素0还是元素1
+          bool shift=false;
+
+
+          //区分双字符键和单子符键，capslk和shift对双字符键和单字符键作用不一样
+          if((scancode &lt; 0x0e) || (scancode == 0x29) || (scancode == 0x1a) || \
+          (scancode == 0x1b) || (scancode == 0x2b) || (scancode == 0x27) || \
+          (scancode == 0x28) || (scancode == 0x33) || (scancode == 0x34) || \
+          (scancode == 0x35))&#123;
+
+              if(shift_down_last)&#123;
+                  shift = true;
+              &#125;
+
+          &#125;else&#123;  //默认是字符键
+              if(shift_down_last &amp;&amp; caps_lock_last)&#123;
+                  shift = false; //效果确实是这样子的 我试了一下
+              &#125;else if(shift_down_last || caps_lock_last)&#123;
+                  shift = true; //其中任意一个都是大写的作用
+              &#125;else&#123;
+                  shift = false;
+              &#125; 
+          &#125;
+
+
+          //忽略高8位，也就是0xe0的影响
+          uint8_t index=(scancode&amp;=0x00ff);
+
+          char cur_char = keymap[index][shift];
+
+          if(cur_char)&#123;
+              put_char(cur_char);
+              return;
+          &#125;
+
+          if(scancode == ctrl_l_make || scancode == ctrl_r_make)&#123;
+              ctrl_status = true;
+          &#125;  	
+          else if(scancode == shift_l_make || scancode == shift_r_make)&#123;
+              shift_status = true;
+          &#125;
+          else if(scancode == alt_l_make || scancode == alt_r_make)&#123;
+              alt_status = true;
+          &#125;
+          else if(scancode == caps_lock_make)&#123;
+              caps_lock_status = !caps_lock_status;
+          &#125;
+          
+      &#125;else&#123;
+          put_str(&quot;unknown key\n&quot;);
+      &#125;
+
+  &#125;
+
+  void keyboard_init()&#123;
+      put_str(&quot;keyboard init start\n&quot;);
+      register_handler(0x21,intr_kerboard_handler);
+      put_str(&quot;kerboard init done\n&quot;);
+  &#125;
+</code></pre>
+</li>
+</ul>
+<h1 id="环形输入缓冲区"><a href="#环形输入缓冲区" class="headerlink" title="环形输入缓冲区"></a>环形输入缓冲区</h1><p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%EF%BC%89/img6.png" alt="img"></p>
+<p>如图是线性缓冲区的生成者与消费者示例图，生产者在前面生产，消费者在后面消费</p>
+<p>我们要将线性缓冲区变成环形，如下图示：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%EF%BC%89/img7.png" alt="img"></p>
+<p>构造环形输入缓冲区是为了实现Shell命令的键入，Shell的命令是由数个字符组成，我们可以先用键盘输入(生产者),将数个字符存在缓冲区中，再用shell一次性读入（消费者）</p>
+<p>实现代码如下：</p>
+<ul>
+<li><p>device&#x2F;ioqueue.h</p>
+<pre><code>  #ifndef __DEVICE_IOQUEUE_H__
+  #define __DEVICE_IOQUEUE_H__
+
+  #include &quot;stdint.h&quot;
+  #include &quot;thread.h&quot;
+  #include &quot;sync.h&quot;
+
+  #define bufsize 64
+
+  struct ioqueue&#123;
+      struct lock lock;
+      struct task_struct* producer;
+      struct task_struct* consumer;
+      char buf[bufsize];
+      int32_t head;
+      int32_t tail;
+  &#125;;
+
+
+  void ioqueue_init(struct ioqueue* ioq);
+  char ioq_getchar(struct ioqueue* ioq);
+  void ioq_putchar(struct ioqueue* ioq,char byte);
+  bool ioq_empty(struct ioqueue* ioq);
+  bool ioq_full(struct ioqueue* ioq);
+
+  #endif
+</code></pre>
+</li>
+<li><p>device&#x2F;ioqueue.c</p>
+<pre><code>  #include &quot;ioqueue.h&quot;
+  #include &quot;interrupt.h&quot;
+  #include &quot;global.h&quot;
+  #include &quot;debug.h&quot;
+
+
+  void ioqueue_init(struct ioqueue* ioq)&#123;
+      lock_init(&amp;ioq-&gt;lock);
+      ioq-&gt;producer=ioq-&gt;consumer=NULL;
+      ioq-&gt;head=ioq-&gt;tail=0;
+  &#125;
+
+
+  static int32_t next_pos(int32_t pos)&#123;
+      return (pos+1)%bufsize;
+  &#125;
+
+  bool ioq_full(struct ioqueue* ioq)&#123;
+      ASSERT(intr_get_status()==INTR_OFF);
+      return next_pos(ioq-&gt;head)==ioq-&gt;tail;
+  &#125;
+
+  bool ioq_empty(struct ioqueue* ioq)&#123;
+      ASSERT(intr_get_status()==INTR_OFF);
+      return ioq-&gt;head==ioq-&gt;tail;
+  &#125;
+
+
+  static void ioq_wait(struct  task_struct** waiter)&#123;
+      ASSERT(*waiter==NULL &amp;&amp; waiter!=NULL);
+      *waiter = running_thread();
+      thread_block(TASK_BLOCKED);
+  &#125;
+
+  static void wakeup(struct task_struct** waiter)&#123;
+      ASSERT(*waiter!=NULL);
+      thread_unblock(*waiter);
+      *waiter=NULL;
+  &#125;
+
+  char ioq_getchar(struct ioqueue* ioq)&#123;
+      ASSERT(intr_get_status()==INTR_OFF);
+
+      while(ioq_empty(ioq))&#123;
+          lock_acquire(&amp;ioq-&gt;lock);
+          ioq_wait(&amp;ioq-&gt;consumer);
+          lock_release(&amp;ioq-&gt;lock);
+      &#125;
+
+      char byte=ioq-&gt;buf[ioq-&gt;tail];
+      ioq-&gt;tail=next_pos(ioq-&gt;tail);
+
+      if(ioq-&gt;producer!=NULL)&#123;
+          wakeup(&amp;ioq-&gt;producer);
+      &#125;
+
+      return byte;
+  &#125;
+
+
+  void ioq_putchar(struct ioqueue* ioq,char byte)&#123;
+      ASSERT(intr_get_status()==INTR_OFF);
+
+      while(ioq_full(ioq))&#123;
+          lock_acquire(&amp;ioq-&gt;lock);
+          ioq_wait(&amp;ioq-&gt;producer);
+          lock_release(&amp;ioq-&gt;lock);
+      &#125;
+
+      ioq-&gt;buf[ioq-&gt;head]=byte;
+      ioq-&gt;head=next_pos(ioq-&gt;head);
+
+      if(ioq-&gt;consumer!=NULL)&#123;
+          wakeup(&amp;ioq-&gt;consumer);
+      &#125;
+  &#125;
+</code></pre>
+</li>
+<li><p>device&#x2F;keyboard.h</p>
+<pre><code>  #ifndef __KEYBOARD_H__
+  #define __KEYBOARD_H__
+
+  void keyboard_init(void);
+
+  extern struct ioqueue kbd_buf;
+
+  #endif
+</code></pre>
+</li>
+<li><p>device&#x2F;keyboard.c(修改)</p>
+<pre><code>  #include &quot;keyboard.h&quot;
+  #include &quot;print.h&quot;
+  #include &quot;interrupt.h&quot;
+  #include &quot;io.h&quot;
+  #include &quot;global.h&quot;
+  #include &quot;stdint.h&quot;
+  #include &quot;ioqueue.h&quot;
+
+  #define KBD_BUF_PORT 0x60
+
+  //定义部分字符控制键的转义字符（可直接用put_char处理）
+  #define esc     &#39;\0x33&#39;     //八进制ASCII码转义
+  #define backspace &#39;\b&#39;
+  #define tab       &#39;\t&#39;
+  #define enter       &#39;\r&#39;
+  #define delete      &#39;\177&#39;  //八进制ASCII码转义
+
+  //定义不可见字符为0
+  #define char_invisible 0
+  #define ctrl_l_char char_invisible
+  #define ctrl_r_char char_invisible
+  #define shift_l_char char_invisible
+  #define shift_r_char char_invisible
+  #define alt_l_char char_invisible
+  #define alt_r_char char_invisible
+  #define caps_lock_char char_invisible
+
+
+  //定义控制字符的通码和断码
+  #define shift_l_make 0x2a
+  #define shift_r_make 0x36
+  #define alt_l_make 0x38
+  #define alt_r_make 0xe038
+  #define alt_r_break 0xe0b8
+  #define ctrl_l_make 0x1d
+  #define ctrl_r_make 0xe01d
+  #define ctrl_r_break 0xe09d
+  #define caps_lock_make 0x3a
+
+
+  bool ctrl_status = false,shift_status = false,alt_status = false,caps_lock_status = false,ext_scancode = false;
+
+
+  //定义键盘缓冲区:
+  struct ioqueue kbd_buf;
+
+
+  //该二维数组的索引是扫描码，元素0代表未按下shift键时的输出字符，元素1代表按下shift键时的输出字符
+  char keymap[][2] = &#123;
+  /* 0x00 */	&#123;0,	0&#125;,		
+  /* 0x01 */	&#123;esc,	esc&#125;,		
+  /* 0x02 */	&#123;&#39;1&#39;,	&#39;!&#39;&#125;,		
+  /* 0x03 */	&#123;&#39;2&#39;,	&#39;@&#39;&#125;,		
+  /* 0x04 */	&#123;&#39;3&#39;,	&#39;#&#39;&#125;,		
+  /* 0x05 */	&#123;&#39;4&#39;,	&#39;$&#39;&#125;,		
+  /* 0x06 */	&#123;&#39;5&#39;,	&#39;%&#39;&#125;,		
+  /* 0x07 */	&#123;&#39;6&#39;,	&#39;^&#39;&#125;,		
+  /* 0x08 */	&#123;&#39;7&#39;,	&#39;&amp;&#39;&#125;,		
+  /* 0x09 */	&#123;&#39;8&#39;,	&#39;*&#39;&#125;,		
+  /* 0x0A */	&#123;&#39;9&#39;,	&#39;(&#39;&#125;,		
+  /* 0x0B */	&#123;&#39;0&#39;,	&#39;)&#39;&#125;,		
+  /* 0x0C */	&#123;&#39;-&#39;,	&#39;_&#39;&#125;,		
+  /* 0x0D */	&#123;&#39;=&#39;,	&#39;+&#39;&#125;,		
+  /* 0x0E */	&#123;backspace, backspace&#125;,	
+  /* 0x0F */	&#123;tab,	tab&#125;,		
+  /* 0x10 */	&#123;&#39;q&#39;,	&#39;Q&#39;&#125;,		
+  /* 0x11 */	&#123;&#39;w&#39;,	&#39;W&#39;&#125;,		
+  /* 0x12 */	&#123;&#39;e&#39;,	&#39;E&#39;&#125;,		
+  /* 0x13 */	&#123;&#39;r&#39;,	&#39;R&#39;&#125;,		
+  /* 0x14 */	&#123;&#39;t&#39;,	&#39;T&#39;&#125;,		
+  /* 0x15 */	&#123;&#39;y&#39;,	&#39;Y&#39;&#125;,		
+  /* 0x16 */	&#123;&#39;u&#39;,	&#39;U&#39;&#125;,		
+  /* 0x17 */	&#123;&#39;i&#39;,	&#39;I&#39;&#125;,		
+  /* 0x18 */	&#123;&#39;o&#39;,	&#39;O&#39;&#125;,		
+  /* 0x19 */	&#123;&#39;p&#39;,	&#39;P&#39;&#125;,		
+  /* 0x1A */	&#123;&#39;[&#39;,	&#39;&#123;&#39;&#125;,		
+  /* 0x1B */	&#123;&#39;]&#39;,	&#39;&#125;&#39;&#125;,		
+  /* 0x1C */	&#123;enter,  enter&#125;,
+  /* 0x1D */	&#123;ctrl_l_char, ctrl_l_char&#125;,
+  /* 0x1E */	&#123;&#39;a&#39;,	&#39;A&#39;&#125;,		
+  /* 0x1F */	&#123;&#39;s&#39;,	&#39;S&#39;&#125;,		
+  /* 0x20 */	&#123;&#39;d&#39;,	&#39;D&#39;&#125;,		
+  /* 0x21 */	&#123;&#39;f&#39;,	&#39;F&#39;&#125;,		
+  /* 0x22 */	&#123;&#39;g&#39;,	&#39;G&#39;&#125;,		
+  /* 0x23 */	&#123;&#39;h&#39;,	&#39;H&#39;&#125;,		
+  /* 0x24 */	&#123;&#39;j&#39;,	&#39;J&#39;&#125;,		
+  /* 0x25 */	&#123;&#39;k&#39;,	&#39;K&#39;&#125;,		
+  /* 0x26 */	&#123;&#39;l&#39;,	&#39;L&#39;&#125;,		
+  /* 0x27 */	&#123;&#39;;&#39;,	&#39;:&#39;&#125;,		
+  /* 0x28 */	&#123;&#39;\&#39;&#39;,	&#39;&quot;&#39;&#125;,		
+  /* 0x29 */	&#123;&#39;`&#39;,	&#39;~&#39;&#125;,		
+  /* 0x2A */	&#123;shift_l_char, shift_l_char&#125;,	
+  /* 0x2B */	&#123;&#39;\\&#39;,	&#39;|&#39;&#125;,		
+  /* 0x2C */	&#123;&#39;z&#39;,	&#39;Z&#39;&#125;,		
+  /* 0x2D */	&#123;&#39;x&#39;,	&#39;X&#39;&#125;,		
+  /* 0x2E */	&#123;&#39;c&#39;,	&#39;C&#39;&#125;,		
+  /* 0x2F */	&#123;&#39;v&#39;,	&#39;V&#39;&#125;,		
+  /* 0x30 */	&#123;&#39;b&#39;,	&#39;B&#39;&#125;,		
+  /* 0x31 */	&#123;&#39;n&#39;,	&#39;N&#39;&#125;,		
+  /* 0x32 */	&#123;&#39;m&#39;,	&#39;M&#39;&#125;,		
+  /* 0x33 */	&#123;&#39;,&#39;,	&#39;&lt;&#39;&#125;,		
+  /* 0x34 */	&#123;&#39;.&#39;,	&#39;&gt;&#39;&#125;,		
+  /* 0x35 */	&#123;&#39;/&#39;,	&#39;?&#39;&#125;,
+  /* 0x36	*/	&#123;shift_r_char, shift_r_char&#125;,	
+  /* 0x37 */	&#123;&#39;*&#39;,	&#39;*&#39;&#125;,    	
+  /* 0x38 */	&#123;alt_l_char, alt_l_char&#125;,
+  /* 0x39 */	&#123;&#39; &#39;,	&#39; &#39;&#125;,		
+  /* 0x3A */	&#123;caps_lock_char, caps_lock_char&#125;
+  &#125;;
+
+
+  static void intr_keyboard_handler(void)&#123;
+
+      bool ctrl_down_last=ctrl_status;
+      bool shift_down_last=shift_status;
+      bool caps_lock_last=caps_lock_status;
+
+      bool break_code;
+      uint16_t scancode=inb(KBD_BUF_PORT);//必须读取缓冲区数据，否则8042不再继续响应键盘中断
+
+      //打开拓展标志，并返回，（说明要接受的扫描码不止1字节，有两字节）
+      if(scancode == 0xe0)&#123;
+          ext_scancode=true;
+          return;
+      &#125;
+
+      if(ext_scancode)&#123;
+          scancode=(0xe000|scancode);
+          ext_scancode=false;
+      &#125;
+
+
+      //true则代表是断码，否则是通码
+      break_code=((scancode&amp;0x0080)!=0);
+
+      if(break_code)&#123;
+          uint16_t make_code=(scancode&amp;=0xff7f);
+
+          //改变状态
+          if(make_code==ctrl_l_make||make_code==ctrl_r_make)&#123;
+              ctrl_status=false;
+          &#125;else if(make_code == shift_l_make || make_code==shift_r_make)&#123;
+              shift_status=false;
+          &#125;else if(make_code == alt_l_make || make_code ==alt_r_make)&#123;
+              alt_status=false;
+          &#125;
+
+          return;
+      &#125;else if((scancode&gt;0x00 &amp;&amp; scancode&lt;0x3b)||(scancode == alt_r_make)||(scancode ==ctrl_r_make))&#123;
+          
+          //shift用于判断keymap到底是要输出元素0还是元素1
+          bool shift=false;
+
+
+          //区分双字符键和单子符键，capslk和shift对双字符键和单字符键作用不一样
+          if((scancode &lt; 0x0e) || (scancode == 0x29) || (scancode == 0x1a) || \
+          (scancode == 0x1b) || (scancode == 0x2b) || (scancode == 0x27) || \
+          (scancode == 0x28) || (scancode == 0x33) || (scancode == 0x34) || \
+          (scancode == 0x35))&#123;
+
+              if(shift_down_last)&#123;
+                  shift = true;
+              &#125;
+
+          &#125;else&#123;  //默认是字符键
+              if(shift_down_last &amp;&amp; caps_lock_last)&#123;
+                  shift = false; //效果确实是这样子的 我试了一下
+              &#125;else if(shift_down_last || caps_lock_last)&#123;
+                  shift = true; //其中任意一个都是大写的作用
+              &#125;else&#123;
+                  shift = false;
+              &#125; 
+          &#125;
+
+
+          //忽略高8位，也就是0xe0的影响
+          uint8_t index=(scancode&amp;=0x00ff);
+
+          char cur_char = keymap[index][shift];
+
+          if(cur_char)&#123;
+              if(!ioq_full(&amp;kbd_buf))&#123;
+  //               put_char(cur_char);
+                  ioq_putchar(&amp;kbd_buf,cur_char);
+              &#125;
+              return;
+          &#125;
+
+          if(scancode == ctrl_l_make || scancode == ctrl_r_make)&#123;
+              ctrl_status = true;
+          &#125;  	
+          else if(scancode == shift_l_make || scancode == shift_r_make)&#123;
+              shift_status = true;
+          &#125;
+          else if(scancode == alt_l_make || scancode == alt_r_make)&#123;
+              alt_status = true;
+          &#125;
+          else if(scancode == caps_lock_make)&#123;
+              caps_lock_status = !caps_lock_status;
+          &#125;
+          
+      &#125;else&#123;
+          put_str(&quot;unknown key\n&quot;);
+      &#125;
+
+  &#125;
+
+  void keyboard_init()&#123;
+      put_str(&quot;keyboard init start\n&quot;);
+      ioqueue_init(&amp;kbd_buf);
+      register_handler(0x21,intr_keyboard_handler);
+      put_str(&quot;kerboard init done\n&quot;);
+  &#125;
+</code></pre>
+</li>
+<li><p>kernel&#x2F;interrupt.c（修改）</p>
+<pre><code>  //打开主片上的IR0,接受时钟中断和键盘中断
+  outb(PIC_M_DATA, 0xfc);
+  outb(PIC_S_DATA, 0xff);
+</code></pre>
+</li>
+</ul>
+<p>（该main.c用两个线程AB充当消费者，键盘键入充当生产者）</p>
+<ul>
+<li><p>kernel&#x2F;main.c</p>
+<pre><code>  #include &quot;print.h&quot;
+  #include &quot;init.h&quot;
+  #include &quot;debug.h&quot;
+  #include &quot;memory.h&quot;
+  #include &quot;thread.h&quot;
+  #include &quot;console.h&quot;
+  #include &quot;interrupt.h&quot;
+  #include &quot;ioqueue.h&quot;
+  #include &quot;keyboard.h&quot;
+
+  void k_thread_a(void*);
+  void k_thread_b(void*);
+
+  int main(void) &#123;
+  put_str(&quot;I am kernel\n&quot;);
+  init_all();
+
+
+  thread_start(&quot;k_thread_a&quot;,31,k_thread_a,&quot; A_&quot;);
+  thread_start(&quot;k_thread_b&quot;,31,k_thread_b,&quot; B_&quot;);
+
+  intr_enable();
+  while(1);
+  // while(1)&#123;
+  //    console_put_str(&quot;Main &quot;);
+  // &#125;;
+  return 0;
+  &#125;
+
+
+  //在线程中运行的函数
+  void k_thread_a(void* arg)&#123;
+  //被调用的函数知道自己需要什么类型的参数，自己转换再用
+  char* para=arg;
+
+  while(1)&#123;
+      enum intr_status old_status =intr_disable();
+      if(!ioq_empty(&amp;kbd_buf))&#123;
+          console_put_str(para);
+          char byte=ioq_getchar(&amp;kbd_buf);
+          console_put_char(byte);
+      &#125;
+      intr_set_status(old_status);
+  &#125;
+  &#125;
+
+  void k_thread_b(void* arg)&#123;
+  //被调用的函数知道自己需要什么类型的参数，自己转换再用
+  char* para=arg;
+
+  while(1)&#123;
+      enum intr_status old_status =intr_disable();
+      if(!ioq_empty(&amp;kbd_buf))&#123;
+          console_put_str(para);
+          char byte=ioq_getchar(&amp;kbd_buf);
+          console_put_char(byte);
+      &#125;
+      intr_set_status(old_status);
+  &#125;
+  &#125;
+</code></pre>
+</li>
+<li><p>makefile</p>
+<pre><code>  BUILD_DIR = ./build
+  ENTRY_POINT = 0xc0001500
+  AS = nasm
+  CC = gcc
+  LD = ld
+  LIB = -I lib/ -I lib/kernel/ -I lib/user/ -I kernel/ -I device/ -I thread/ 
+  ASFLAGS = -f elf
+
+  CFLAGS = -Wall -m32 -fno-stack-protector $(LIB) -c -fno-builtin -W -Wstrict-prototypes -Wmissing-prototypes
+  # -fno-stack-protector 闭栈保护的编译选项，栈保护作用是禁止编译器在函数的栈帧中插入栈保护符号，以防止栈溢出攻击。
+  # -fno-builtin 告诉编译器不要采用内部函数，因为我们以后会自定义与内部函数同名的函数
+  # -Wall 启动所有警告
+  # -W 启动常见警告
+  # -Wstrict-prototypes  要求函数声明中必须有参数类型，否则警告
+  # -Wmissing-prototypes 要求函数必须声明，否则警告
+
+  LDFLAGS =  -m elf_i386 -Ttext $(ENTRY_POINT) -e main -Map $(BUILD_DIR)/kernel.map
+  # -Map $(BUILD_DIR)/kernel.map  输出文件build/kernel.map。用于记录kernel符号地址
+
+  OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
+      $(BUILD_DIR)/timer.o $(BUILD_DIR)/kernel.o $(BUILD_DIR)/print.o \
+      $(BUILD_DIR)/debug.o $(BUILD_DIR)/string.o $(BUILD_DIR)/memory.o \
+      $(BUILD_DIR)/bitmap.o $(BUILD_DIR)/thread.o $(BUILD_DIR)/list.o \
+      $(BUILD_DIR)/switch.o $(BUILD_DIR)/sync.o $(BUILD_DIR)/console.o \
+      $(BUILD_DIR)/keyboard.o $(BUILD_DIR)/ioqueue.o
+  # 定义目标文件名集合，用于ld时依赖文件项
+
+
+  ##############     c代码编译     			###############
+  $(BUILD_DIR)/main.o: kernel/main.c lib/kernel/print.h \
+          lib/stdint.h kernel/init.h lib/string.h kernel/memory.h \
+          thread/thread.h kernel/interrupt.h device/console.h \
+          device/keyboard.h device/ioqueue.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/init.o: kernel/init.c kernel/init.h lib/kernel/print.h \
+          lib/stdint.h kernel/interrupt.h device/timer.h kernel/memory.h \
+          thread/thread.h device/console.h device/keyboard.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/interrupt.o: kernel/interrupt.c kernel/interrupt.h \
+          lib/stdint.h kernel/global.h lib/kernel/io.h lib/kernel/print.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/timer.o: device/timer.c device/timer.h lib/kernel/io.h lib/kernel/print.h \
+          kernel/interrupt.h thread/thread.h kernel/debug.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/debug.o: kernel/debug.c kernel/debug.h \
+          lib/kernel/print.h lib/stdint.h kernel/interrupt.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/string.o: lib/string.c lib/string.h \
+          kernel/debug.h kernel/global.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+      
+  $(BUILD_DIR)/memory.o: kernel/memory.c kernel/memory.h \
+          lib/stdint.h lib/kernel/bitmap.h kernel/debug.h lib/string.h \
+          lib/kernel/print.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+      
+  $(BUILD_DIR)/bitmap.o: lib/kernel/bitmap.c lib/kernel/bitmap.h \
+          lib/string.h kernel/interrupt.h lib/kernel/print.h kernel/debug.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/thread.o: thread/thread.c thread/thread.h \
+          lib/stdint.h lib/string.h kernel/global.h kernel/memory.h \
+          kernel/debug.h kernel/interrupt.h lib/kernel/print.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/list.o: lib/kernel/list.c lib/kernel/list.h \
+          kernel/interrupt.h lib/stdint.h kernel/debug.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/sync.o: thread/sync.c thread/sync.h \
+          lib/stdint.h thread/thread.h kernel/debug.h kernel/interrupt.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+      
+  $(BUILD_DIR)/console.o: device/console.c device/console.h \
+          lib/kernel/print.h thread/sync.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/keyboard.o: device/keyboard.c device/keyboard.h \
+          lib/kernel/print.h lib/kernel/io.h kernel/interrupt.h \
+          kernel/global.h lib/stdint.h device/ioqueue.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/ioqueue.o: device/ioqueue.c device/ioqueue.h \
+          kernel/interrupt.h kernel/global.h kernel/debug.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  ##############     c代码编译     			###############
+
+
+  ##############    汇编代码编译    ###############
+  $(BUILD_DIR)/kernel.o: kernel/kernel.S
+      $(AS) $(ASFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/print.o: lib/kernel/print.S
+      $(AS) $(ASFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/switch.o: thread/switch.S
+      $(AS) $(ASFLAGS) $&lt; -o $@
+  ##############    汇编代码编译    ###############
+
+
+  ##############    链接所有目标文件    #############
+  $(BUILD_DIR)/kernel.bin: $(OBJS)
+      $(LD) $(LDFLAGS) $^ -o $@
+  ##############    链接所有目标文件    #############
+
+
+  ################  伪目标 ###############################
+  .PHONY : mk_dir hd clean build all
+
+  mk_dir:
+      if [ ! -d $(BUILD_DIR) ]; then mkdir $(BUILD_DIR); fi
+
+  hd:
+      dd if=$(BUILD_DIR)/kernel.bin \
+          of=/home/sparkle2/bochs/hd60M.img \
+          bs=512 count=200 seek=9 conv=notrunc
+
+  clean:
+      cd $(BUILD_DIR) &amp;&amp; rm -f  ./*
+
+  build: $(BUILD_DIR)/kernel.bin
+
+  all: mk_dir build hd
+  ################  伪目标 ###############################
+</code></pre>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -5754,117 +6874,6 @@ ata0-master: type=disk, path=&quot;hd60M.img&quot;, mode=flat,cylinders=121,head
 </code></pre>
 <h1 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h1><p>到此，第一步环境的部署就做完了，第二步就可以开始正式写代码了。</p>
 <p>只是环境部署就用了将近两天时间，期间反复下载了4次虚拟机，长路漫漫。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/04/VSCode%E7%BC%96%E7%A0%81%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Sparkle">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Sparkle's Space">
-      <meta itemprop="description" content="If there is no torchlight in the future, I will be the only light.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | Sparkle's Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/11/04/VSCode%E7%BC%96%E7%A0%81%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98/" class="post-title-link" itemprop="url">VScode编码不一致问题</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2023-11-04 22:15:24" itemprop="dateCreated datePublished" datetime="2023-11-04T22:15:24+08:00">2023-11-04</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2023-11-06 11:19:23" itemprop="dateModified" datetime="2023-11-06T11:19:23+08:00">2023-11-06</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>本文描述并解决在VSCode里遇到的控制台编码与文件编码不一致导致的乱码问题</p>
-<h1 id="VSCode控制台介绍"><a href="#VSCode控制台介绍" class="headerlink" title="VSCode控制台介绍"></a>VSCode控制台介绍</h1><p>VSCode里不止只有1个控制台，如下图所示：</p>
-<p><img src="/img/VSCode%E7%BC%96%E7%A0%81%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98/img1.png" alt="img"></p>
-<p>图中一共有四个控制台，可通过终端窗口右上角的<code>+</code>进行调整</p>
-<ul>
-<li><p>PowerShell：VSCode默认采用PowerShell，功能上比cmd更为强大，兼容cmd命令的同时有自己扩展的指令集，用来管理Windows系统和应用程序，执行复杂的脚本和自动化任务。</p>
-</li>
-<li><p>Git Bash：Git Bash是Git自带的一个终端模拟器，兼容cmd命令的同时扩展了Linux命令和git命令，它可以在Windows上模拟Bash环境（Linux的控制台）。适合习惯使用Linux的用户。</p>
-</li>
-<li><p>JavaScript调试终端：可以让你在VSCode中直接运行和调试JavaScript代码，而不需要额外的配置或者浏览器。</p>
-</li>
-<li><p>Command Prompt：基于Dos的传统的cmd命令行，cmd不兼容上述控制台，只能用来执行一些基本的命令和批处理文件。</p>
-</li>
-</ul>
-<p>除了上述四个控制台外，还有在调试代码时跳出的针对不同语言不同的控制台，例如：用于调试C++&#x2F;C代码的cppdbg；用于调试python代码的python Debug Console等等，可以在调试代码时，查看终端窗口右上角的小标题来确定你现在使用的是哪一个控制台</p>
-<p>注意：不同的控制台使用的编码是独立不相互影响的，千万不要使用A控制台却去调整B控制台的编码</p>
-<h1 id="VSCode文件编码介绍"><a href="#VSCode文件编码介绍" class="headerlink" title="VSCode文件编码介绍"></a>VSCode文件编码介绍</h1><p>VSCode当前文件编码格式可以查看右下角</p>
-<p><img src="/img/VSCode%E7%BC%96%E7%A0%81%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98/img2.png" alt="img"></p>
-<p>如图，当前文件编码是UTF-8</p>
-<p>如果想要修改该文件编码，可以点击图中的UTF-8</p>
-<p><img src="/img/VSCode%E7%BC%96%E7%A0%81%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98/img3.png" alt="img"></p>
-<p>先选择通过目标编码方式保存，再通过目标编码方式打开，这样就成功修改了当前文件的编码格式</p>
-<h1 id="常见的编码介绍"><a href="#常见的编码介绍" class="headerlink" title="常见的编码介绍"></a>常见的编码介绍</h1><ul>
-<li><p>GBK：针对中文的编码（国内cmd默认的编码方式），在国家标准GB2312的基础上扩展的，向下兼容GB2312，但在国外并不常用。代码是936</p>
-</li>
-<li><p>UTF-8：UTF-8是一种针对多语言的编码，它包含了全世界所有国家需要用到的字符，基于Unicode字符集的，向下兼容ASCII，在国际上通行。代码是65001</p>
-</li>
-</ul>
-<h1 id="如何查看并改变控制台编码"><a href="#如何查看并改变控制台编码" class="headerlink" title="如何查看并改变控制台编码"></a>如何查看并改变控制台编码</h1><p>在控制台里输入以下命令可以查看当前控制台编码格式：</p>
-<pre><code>chcp
-</code></pre>
-<p>在控制台里输入以下命令可临时转化当前控制台编码格式：</p>
-<pre><code>chcp &#39;编码代码&#39;
-</code></pre>
-<p>综上，只要保证文件和控制台编码格式相同，就不会出现乱码问题</p>
-<h1 id="本文尚未解决的问题"><a href="#本文尚未解决的问题" class="headerlink" title="本文尚未解决的问题"></a>本文尚未解决的问题</h1><p>本文只提供了临时更改控制台编码的方法，并没有提供更改各个控制台默认编码的方法</p>
 
       
     </div>

@@ -116,7 +116,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">11</span>
+          <span class="site-state-item-count">12</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -134,6 +134,117 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/04/VSCode%E7%BC%96%E7%A0%81%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Sparkle">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sparkle's Space">
+      <meta itemprop="description" content="If there is no torchlight in the future, I will be the only light.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | Sparkle's Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2023/11/04/VSCode%E7%BC%96%E7%A0%81%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98/" class="post-title-link" itemprop="url">VScode编码不一致问题</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2023-11-04 22:15:24" itemprop="dateCreated datePublished" datetime="2023-11-04T22:15:24+08:00">2023-11-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2023-11-06 11:19:23" itemprop="dateModified" datetime="2023-11-06T11:19:23+08:00">2023-11-06</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>本文描述并解决在VSCode里遇到的控制台编码与文件编码不一致导致的乱码问题</p>
+<h1 id="VSCode控制台介绍"><a href="#VSCode控制台介绍" class="headerlink" title="VSCode控制台介绍"></a>VSCode控制台介绍</h1><p>VSCode里不止只有1个控制台，如下图所示：</p>
+<p><img src="/img/VSCode%E7%BC%96%E7%A0%81%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98/img1.png" alt="img"></p>
+<p>图中一共有四个控制台，可通过终端窗口右上角的<code>+</code>进行调整</p>
+<ul>
+<li><p>PowerShell：VSCode默认采用PowerShell，功能上比cmd更为强大，兼容cmd命令的同时有自己扩展的指令集，用来管理Windows系统和应用程序，执行复杂的脚本和自动化任务。</p>
+</li>
+<li><p>Git Bash：Git Bash是Git自带的一个终端模拟器，兼容cmd命令的同时扩展了Linux命令和git命令，它可以在Windows上模拟Bash环境（Linux的控制台）。适合习惯使用Linux的用户。</p>
+</li>
+<li><p>JavaScript调试终端：可以让你在VSCode中直接运行和调试JavaScript代码，而不需要额外的配置或者浏览器。</p>
+</li>
+<li><p>Command Prompt：基于Dos的传统的cmd命令行，cmd不兼容上述控制台，只能用来执行一些基本的命令和批处理文件。</p>
+</li>
+</ul>
+<p>除了上述四个控制台外，还有在调试代码时跳出的针对不同语言不同的控制台，例如：用于调试C++&#x2F;C代码的cppdbg；用于调试python代码的python Debug Console等等，可以在调试代码时，查看终端窗口右上角的小标题来确定你现在使用的是哪一个控制台</p>
+<p>注意：不同的控制台使用的编码是独立不相互影响的，千万不要使用A控制台却去调整B控制台的编码</p>
+<h1 id="VSCode文件编码介绍"><a href="#VSCode文件编码介绍" class="headerlink" title="VSCode文件编码介绍"></a>VSCode文件编码介绍</h1><p>VSCode当前文件编码格式可以查看右下角</p>
+<p><img src="/img/VSCode%E7%BC%96%E7%A0%81%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98/img2.png" alt="img"></p>
+<p>如图，当前文件编码是UTF-8</p>
+<p>如果想要修改该文件编码，可以点击图中的UTF-8</p>
+<p><img src="/img/VSCode%E7%BC%96%E7%A0%81%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98/img3.png" alt="img"></p>
+<p>先选择通过目标编码方式保存，再通过目标编码方式打开，这样就成功修改了当前文件的编码格式</p>
+<h1 id="常见的编码介绍"><a href="#常见的编码介绍" class="headerlink" title="常见的编码介绍"></a>常见的编码介绍</h1><ul>
+<li><p>GBK：针对中文的编码（国内cmd默认的编码方式），在国家标准GB2312的基础上扩展的，向下兼容GB2312，但在国外并不常用。代码是936</p>
+</li>
+<li><p>UTF-8：UTF-8是一种针对多语言的编码，它包含了全世界所有国家需要用到的字符，基于Unicode字符集的，向下兼容ASCII，在国际上通行。代码是65001</p>
+</li>
+</ul>
+<h1 id="如何查看并改变控制台编码"><a href="#如何查看并改变控制台编码" class="headerlink" title="如何查看并改变控制台编码"></a>如何查看并改变控制台编码</h1><p>在控制台里输入以下命令可以查看当前控制台编码格式：</p>
+<pre><code>chcp
+</code></pre>
+<p>在控制台里输入以下命令可临时转化当前控制台编码格式：</p>
+<pre><code>chcp &#39;编码代码&#39;
+</code></pre>
+<p>综上，只要保证文件和控制台编码格式相同，就不会出现乱码问题</p>
+<h1 id="本文尚未解决的问题"><a href="#本文尚未解决的问题" class="headerlink" title="本文尚未解决的问题"></a>本文尚未解决的问题</h1><p>本文只提供了临时更改控制台编码的方法，并没有提供更改各个控制台默认编码的方法</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
