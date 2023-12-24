@@ -116,7 +116,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-count">14</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -134,6 +134,397 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/12/24/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%E5%9B%9B%EF%BC%89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Sparkle">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sparkle's Space">
+      <meta itemprop="description" content="If there is no torchlight in the future, I will be the only light.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | Sparkle's Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2023/12/24/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%E5%9B%9B%EF%BC%89/" class="post-title-link" itemprop="url">自制简易操作系统（十四）</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2023-12-24 01:15:47 / Modified: 23:51:54" itemprop="dateCreated datePublished" datetime="2023-12-24T01:15:47+08:00">2023-12-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>graph LR<br>    A[开始] –&gt; B[扫描空闲分区表]<br>    B –&gt; C{是否有满足要求的空闲分区}<br>    C – 是 –&gt; D[按照空闲分区大小升序排序]<br>    D –&gt; E[选择第一个空闲分区]<br>    E –&gt; F{是否与作业大小相等}<br>    F – 是 –&gt; G[分配该空闲分区给作业]<br>    G –&gt; H[结束]<br>    F – 否 –&gt; I[将该空闲分区分割为两部分]<br>    I –&gt; J[分配一部分给作业，另一部分仍为空闲]<br>    J –&gt; H<br>    C – 否 –&gt; K[分配失败，等待下次分配]<br>    K –&gt; H</p>
+<p>graph LR<br>    A[开始] –&gt; B[扫描内存分区表]<br>    B –&gt; C{是否找到对应的作业分区}<br>    C – 是 –&gt; D[回收该作业分区，置为空闲]<br>    D –&gt; E{是否与前后相邻的空闲分区合并}<br>    E – 是 –&gt; F[合并空闲分区]<br>    F –&gt; G[结束]<br>    E – 否 –&gt; G<br>    C – 否 –&gt; H[回收失败，作业不存在]<br>    H –&gt; G</p>
+<h1 id="文件系统"><a href="#文件系统" class="headerlink" title="文件系统"></a>文件系统</h1><p>文件系统的核心是管理</p>
+<h2 id="超级块"><a href="#超级块" class="headerlink" title="超级块"></a>超级块</h2><p>用于描述管理信息（大小一共512字节，一扇区也是一块）</p>
+<pre><code>/* 超级块 */
+struct super_block &#123;
+    uint32_t magic;		    // 用来标识文件系统类型,支持多文件系统的操作系统通过此标志来识别文件系统类型
+
+    //描述总分区信息
+    uint32_t sec_cnt;		    // 本分区总共的扇区数
+    uint32_t inode_cnt;		    // 本分区中inode数量
+    uint32_t part_lba_base;	    // 本分区的起始lba地址
+
+
+    //描述空闲块位图
+    uint32_t block_bitmap_lba;	    // 块位图本身起始扇区地址
+    uint32_t block_bitmap_sects;     // 扇区位图本身占用的扇区数量
+
+
+    //描述inode位图
+    uint32_t inode_bitmap_lba;	    // i结点位图起始扇区lba地址
+    uint32_t inode_bitmap_sects;	    // i结点位图占用的扇区数量
+
+
+    //描述inode表
+    uint32_t inode_table_lba;	    // i结点表起始扇区lba地址
+    uint32_t inode_table_sects;	    // i结点表占用的扇区数量
+
+
+    //描述数据区(包含根目录)
+    uint32_t data_start_lba;	    // 数据区开始的第一个扇区号
+    uint32_t root_inode_no;	    // 根目录所在的I结点号
+    uint32_t dir_entry_size;	    // 目录项大小
+
+    uint8_t  pad[460];		    // 加上460字节,凑够512字节1扇区大小
+&#125; __attribute__ ((packed));
+</code></pre>
+<h3 id="空闲块位图"><a href="#空闲块位图" class="headerlink" title="空闲块位图"></a>空闲块位图</h3><h3 id="inode位图"><a href="#inode位图" class="headerlink" title="inode位图"></a>inode位图</h3><h3 id="inode表"><a href="#inode表" class="headerlink" title="inode表"></a>inode表</h3><h3 id="根目录数据区"><a href="#根目录数据区" class="headerlink" title="根目录数据区"></a>根目录数据区</h3><h2 id="inode"><a href="#inode" class="headerlink" title="inode"></a>inode</h2><p>inode相当于是文件的本身，一个inode就是一个文件</p>
+<pre><code>/* inode结构 */
+struct inode &#123;
+    uint32_t i_no;    // inode编号
+
+    /* 当此inode是文件时,i_size是指文件大小,
+    若此inode是目录,i_size是指该目录下所有目录项大小之和*/
+    uint32_t i_size;
+
+    uint32_t i_open_cnts;   // 记录此文件被打开的次数
+    bool write_deny;	   // 写文件不能并行,进程写文件前检查此标识
+
+    /* i_sectors[0-11]是直接块, i_sectors[12]用来存储一级间接块指针 */
+    uint32_t i_sectors[13];
+    struct list_elem inode_tag;
+&#125;;
+</code></pre>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/12/12/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%E4%B8%80%EF%BC%89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Sparkle">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sparkle's Space">
+      <meta itemprop="description" content="If there is no torchlight in the future, I will be the only light.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | Sparkle's Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2023/12/12/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%E4%B8%80%EF%BC%89/" class="post-title-link" itemprop="url">自制简易操作系统（十一）</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2023-12-12 13:24:49 / Modified: 18:42:09" itemprop="dateCreated datePublished" datetime="2023-12-12T13:24:49+08:00">2023-12-12</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>用户进程</p>
+<h1 id="任务状态段TSS"><a href="#任务状态段TSS" class="headerlink" title="任务状态段TSS"></a>任务状态段TSS</h1><p>TSS结构如下：<br><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%E4%B8%80%EF%BC%89/img1.png" alt="img"></p>
+<p>TSS是用于切换任务时保存当前环境的工具。TTS提供了三个特权级栈，当该任务提升特权级时就会对应使用相应的特权级栈（使用不同的栈保证低特权级无法访问到高特权级的资源）</p>
+<p>在Linux系统中，用户程序处于特权级3，内核程序处于特权级0，Linux不使用TTS结构来保存上下文环境，Linux只使用了TSS中的0特权级栈一个结构。</p>
+<p>LinuxOS的逻辑如下：只维护一个TSS，每次切换任务时修改TSS0特权级栈，其他功能一律不使用。至于上下文环境Linux则是保存在PCB结构中。</p>
+<p>TSS结构本质上是一个特殊的段，因此要在GDT中构造TSS专用的TSS描述符，同时也得构造TSS选择子，我们可以通过TSS选择子在GDT中寻找到TSS描述符，进而寻找到TSS结构。</p>
+<p>TR寄存器通过TSS选择子寻找到TSS结构，然后存储TSS的起始地址以及偏移大小。（TR加载命令如下：<code>ltr 16位TTS选择子</code>）</p>
+<p>TR结构如下图所示：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%E4%B8%80%EF%BC%89/img3.png" alt="img"></p>
+<p>通过TSS选择子寻找TSS的逻辑如下图所示：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%E4%B8%80%EF%BC%89/img2.png" alt="img"></p>
+<h1 id="定义并初始化TSS"><a href="#定义并初始化TSS" class="headerlink" title="定义并初始化TSS"></a>定义并初始化TSS</h1><p>我们所要做的事如下：</p>
+<ol>
+<li><p>定义TSS段描述符，并装载在gdt中</p>
+</li>
+<li><p>定义TSS段描述符，并用 ltr 命令装载到 TR 里</p>
+</li>
+<li><p>初始化TSS（初始化一次TSS后就无需再更换了，后续切换任务只修改TSS中0特权级栈的内容）</p>
+</li>
+</ol>
+<p>代码如下：</p>
+<ul>
+<li><p>kernel&#x2F;global.h</p>
+<pre><code>  #ifndef __KERNEL_GLOBAL_H
+  #define __KERNEL_GLOBAL_H
+  #include &quot;stdint.h&quot;
+
+  #define	 RPL0  0
+  #define	 RPL1  1
+  #define	 RPL2  2
+  #define	 RPL3  3
+  #define	 PG_SIZE  4096
+
+  #define TI_GDT 0
+  #define TI_LDT 1
+
+  //--------------   GDT描述符属性  ------------
+
+  #define DESC_G_4K	1
+  #define DESC_D_32	1
+  #define DESC_L		0
+  #define DESC_AVL	0
+  #define DESC_P		1
+  #define DESC_DPL_0	0
+  #define DESC_DPL_1	1
+  #define DESC_DPL_2	2
+  #define DESC_DPL_3	3
+
+  #define DESC_S_CODE	1
+  #define DESC_S_DATA	DESC_S_CODE
+  #define DESC_S_SYS	0
+  #define DESC_TYPE_CODE	8
+
+  #define DESC_TYPE_DATA 2
+  #define DESC_TYPE_TSS  9
+
+  /*KERNEL段*/
+  #define SELECTOR_K_CODE	   ((1 &lt;&lt; 3) + (TI_GDT &lt;&lt; 2) + RPL0)
+  #define SELECTOR_K_DATA	   ((2 &lt;&lt; 3) + (TI_GDT &lt;&lt; 2) + RPL0)
+  #define SELECTOR_K_STACK          SELECTOR_K_DATA 
+  #define SELECTOR_K_GS	           ((3 &lt;&lt; 3) + (TI_GDT &lt;&lt; 2) + RPL0)
+  /*这里是TSS*/
+  /*USER段*/
+  #define SELECTOR_U_CODE  	   ((5 &lt;&lt; 3) + (TI_GDT &lt;&lt; 2) + RPL3)
+  #define SELECTOR_U_DATA	   ((6 &lt;&lt; 3) + (TI_GDT &lt;&lt; 2) + RPL3)
+  #define SELECTOR_U_STACK	   SELECTOR_U_DATA
+
+  #define GDT_ATTR_HIGH		   ((DESC_G_4K &lt;&lt; 7) + (DESC_D_32 &lt;&lt; 6) + (DESC_L &lt;&lt; 5) + (DESC_AVL &lt;&lt; 4))
+
+  #define GDT_CODE_ATTR_LOW_DPL3    ((DESC_P &lt;&lt; 7) + (DESC_DPL_3 &lt;&lt; 5) + (DESC_S_CODE &lt;&lt; 4) + DESC_TYPE_CODE)
+
+  #define GDT_DATA_ATTR_LOW_DPL3    ((DESC_P &lt;&lt; 7) + (DESC_DPL_3 &lt;&lt; 5) + (DESC_S_DATA &lt;&lt; 4) + DESC_TYPE_DATA)
+
+
+
+  //--------------   IDT描述符属性  ------------
+  #define	 IDT_DESC_P	 1 
+  #define	 IDT_DESC_DPL0   0
+  #define	 IDT_DESC_DPL3   3
+  #define	 IDT_DESC_32_TYPE     0xE   // 32位的门
+  #define	 IDT_DESC_16_TYPE     0x6   // 16位的门，不用，定义它只为和32位门区分
+  #define	 IDT_DESC_ATTR_DPL0  ((IDT_DESC_P &lt;&lt; 7) + (IDT_DESC_DPL0 &lt;&lt; 5) + IDT_DESC_32_TYPE)
+  #define	 IDT_DESC_ATTR_DPL3  ((IDT_DESC_P &lt;&lt; 7) + (IDT_DESC_DPL3 &lt;&lt; 5) + IDT_DESC_32_TYPE)
+
+
+  //--------------   TSS描述符属性  ------------
+  #define	 TSS_DESC_D 0
+  #define 	 TSS_ATTR_HIGH ((DESC_G_4K &lt;&lt; 7) + (TSS_DESC_D &lt;&lt; 6) + (DESC_L &lt;&lt; 5) + (DESC_AVL &lt;&lt; 4) + 0X0)
+  #define 	 TSS_ATTR_LOW  ((DESC_P &lt;&lt; 7) + (DESC_DPL_0 &lt;&lt; 5) + (DESC_S_SYS &lt;&lt; 4) + DESC_TYPE_TSS)
+
+  #define 	 SELECTOR_TSS  ((4 &lt;&lt; 3) + (TI_GDT &lt;&lt; 2) + RPL0)
+
+  /*描述符结构*/
+  struct gdt_desc
+  &#123;
+      uint16_t limit_low_word;
+      uint16_t base_low_word;
+      uint8_t  base_mid_byte;
+      uint8_t  attr_low_byte;
+      uint8_t  limit_high_attr_high;
+      uint8_t  base_high_byte;
+  &#125;;
+
+  #endif
+</code></pre>
+</li>
+<li><p>userprog&#x2F;tss.c</p>
+<pre><code>  #include &quot;tss.h&quot;
+  #include &quot;global.h&quot;
+  #include &quot;thread.h&quot;
+  #include &quot;print.h&quot;
+  #include &quot;string.h&quot;
+  #include &quot;stdint.h&quot;
+
+  struct tss
+  &#123;
+      uint32_t backlink;
+      uint32_t* esp0;
+      uint32_t ss0;
+      uint32_t* esp1;
+      uint32_t ss1;
+      uint32_t* esp2;
+      uint32_t ss2;
+      uint32_t cr3;
+      uint32_t (*eip) (void);  //eip是一个函数指针
+      uint32_t eflags;
+      uint32_t eax;
+      uint32_t ecx;
+      uint32_t edx;
+      uint32_t ebx;
+      uint32_t esp;
+      uint32_t ebp;
+      uint32_t esi;
+      uint32_t edi;
+      uint32_t es;
+      uint32_t cs;
+      uint32_t ss;
+      uint32_t ds;
+      uint32_t fs;
+      uint32_t gs;
+      uint32_t ldt;
+      uint32_t trace;
+      uint32_t io_base;
+  &#125;;
+
+  static struct tss tss;
+
+  //切换tss的0特权级栈，相当于任务切换
+  void updata_tss_esp(struct task_struct* pthread)
+  &#123;
+      tss.esp0 = (uint32_t*)((uint32_t)pthread + PG_SIZE);
+  &#125;
+
+
+  struct gdt_desc make_gdt_desc(uint32_t* desc_addr,uint32_t limit,uint8_t attr_low,uint8_t attr_high)
+  &#123;
+      struct gdt_desc desc;
+      uint32_t desc_base = (uint32_t) desc_addr;
+      desc.limit_low_word =  limit &amp; 0x0000ffff;
+      desc.base_low_word = desc_base &amp; 0x0000ffff;
+      desc.base_mid_byte = ((desc_base &amp; 0x00ff0000) &gt;&gt; 16);
+      desc.attr_low_byte = (uint8_t)(attr_low);
+      desc.limit_high_attr_high = (((limit &amp; 0x000f0000) &gt;&gt; 16) + (uint8_t)(attr_high));
+      desc.base_high_byte = desc_base &gt;&gt; 24;
+      return desc;
+  &#125;
+
+  void tss_init()
+  &#123;
+      put_str(&quot;tss_init start\n&quot;);
+      uint32_t tss_size = sizeof(tss);
+      memset(&amp;tss,0,tss_size);
+      tss.ss0 = SELECTOR_K_STACK;
+      tss.io_base = tss_size;
+      
+      //之前的gdt放在了0xc0000903的位置
+      *((struct gdt_desc*)0xc0000923) = make_gdt_desc((uint32_t*)&amp;tss,tss_size-1,TSS_ATTR_LOW,TSS_ATTR_HIGH);
+      *((struct gdt_desc*)0xc000092b) = make_gdt_desc((uint32_t*)0,0xfffff,GDT_CODE_ATTR_LOW_DPL3,\
+                                              GDT_ATTR_HIGH);
+      *((struct gdt_desc*)0xc0000933) = make_gdt_desc((uint32_t*)0,0xfffff,GDT_DATA_ATTR_LOW_DPL3,\
+                                              GDT_ATTR_HIGH);
+      
+      uint64_t gdt_operand = \
+      ((8*7 - 1) | ((uint64_t)(uint32_t)0xc0000903 &lt;&lt; 16));
+      
+
+      //重新加载gdt
+      asm volatile(&quot;lgdt %0&quot; :: &quot;m&quot;(gdt_operand));
+
+      //将tss加载到tr
+      asm volatile(&quot;ltr %w0&quot; :: &quot;r&quot;(SELECTOR_TSS));
+
+      put_str(&quot;tss_init and ltr done\n&quot;);
+  &#125;
+</code></pre>
+</li>
+</ul>
+<p>程序运行后现在可以看到gdt里一共有7个段描述符：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%E4%B8%80%EF%BC%89/img4.png" alt="img"></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -6561,319 +6952,6 @@ call function
 <p> 最后运行命令<code>bin/bochs -f bochsrc.disk</code>看到屏幕上出现<code>2 loader</code>的输出字符实验就成功了</p>
 </li>
 </ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/09/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%BA%8C%EF%BC%89/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Sparkle">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Sparkle's Space">
-      <meta itemprop="description" content="If there is no torchlight in the future, I will be the only light.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | Sparkle's Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/11/09/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%BA%8C%EF%BC%89/" class="post-title-link" itemprop="url">自制简易操作系统（二）</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2023-11-09 23:15:59" itemprop="dateCreated datePublished" datetime="2023-11-09T23:15:59+08:00">2023-11-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2023-11-11 17:01:58" itemprop="dateModified" datetime="2023-11-11T17:01:58+08:00">2023-11-11</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>在这一章，我们编写一段MBR程序并装载在磁盘里，开始接手操作系统的第一步。</p>
-<h1 id="BIOS与MBR的职责和功能"><a href="#BIOS与MBR的职责和功能" class="headerlink" title="BIOS与MBR的职责和功能"></a>BIOS与MBR的职责和功能</h1><p>下图是1MB寻址范围内存空间在实模式下的内存布局（注意区分寻址范围和空间大小的区别，实模式由于20位地址总线所以最大寻址范围是1MB，但这不代表内存空间大小就1MB，实际内存大小是1MB*Byte）：</p>
-<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%BA%8C%EF%BC%89/img1.jpg" alt="img"></p>
-<p><strong>PS：0x00000~0x9FFFF是RAM，0xA0000~0xFFFFF是ROM</strong><br><strong>你可能会觉得疑惑：一定要如此布局吗？</strong><br><strong>该布局方式源于早期系统，其中一些魔数（特别的数，像是为什么MBR其实地址在0x7C00）也是早期约定好的规矩，而后来的设备为了可以兼容早期设备都遵守这些规矩</strong></p>
-<p>BIOS全称叫Base Input&amp;Output System，即基本输入输出系统，是固化在ROM上的一段程序</p>
-<p>电脑上电后运行的第一个软件就是BIOS，也就是CS:IP在硬件支持下一上电即为<code>0xF000:0xFFF0</code>（BIOS的入口地址）。BIOS的入口地址处是一条跳转指令<code>jmp far f000:e05b</code>,CPU跳转并开始执行BIOS的程序，开始检测内存、显卡等外设信息，初始化硬件，并在<code>0x000~0x3FFF</code>处建立中断向量</p>
-<p>BIOS的最后一项工作是校验启动盘中位于<code>0盘0道1扇区</code>（相当于0盘0道0扇区，1扇区和0扇区只是描述方法不同）的内容，如果此时扇区末尾的两个字节分别是0x55和0xaa，BIOS便将该扇区的内容认定为待装载的MBR程序（Main Boot Record 主引导记录），将其加载道物理地址0x7c00处，然后将控制权MBR，执行MBR程序</p>
-<p>通俗地说：BIOS就是接力手的第一棒，MBR就是第二棒</p>
-<p>我们的目的就是编写MBR程序，并装载到启动盘的<code>0盘0道1扇区</code>处，由我们来接手第二棒</p>
-<h1 id="必须要了解的相关知识点"><a href="#必须要了解的相关知识点" class="headerlink" title="必须要了解的相关知识点"></a>必须要了解的相关知识点</h1><ol>
-<li><p>MBR的大小必须是512字节，而且得保证0x55和0xaa在该扇区的这两个魔数出现在510字节和511字节</p>
-</li>
-<li><p>x86平台是小端序（低位字节放在低地址），也就是说对于0xaa55这条指令来说，0xaa高位字节放在高地址（511），0x55低位字节放在低地址（510）</p>
-</li>
-<li><p>$和$$是NASM预留的关键字，$是表示本行代码起始地址的标号，$$是表示本section代码起始地址的标号</p>
-</li>
-<li><p>section可以用vstart&#x3D;xxxx修饰，表示section的虚拟起始地址设置为xxxx</p>
-</li>
-<li><p>我们知道BIOS在扫描完0xaa55后会装载并跳转道0x7c00，这一步也是由硬件支持，CS:IP会被强制设置为<code>0x0000:0x7c00</code></p>
-</li>
-<li><p>NASM指令格式：<code>nasm -f &lt;format&gt; &lt;filename&gt; [-o &lt;output&gt;]</code> 其中<code>-f &lt;format&gt;</code>是指令输出文件格式，<code>&lt;filename&gt;</code>是目标文件名， <code>-o &lt;output&gt;</code>是指令输出文件名</p>
-</li>
-<li><p>关于输出文件格式有很多种，我们这里只关注bin和elf：bin是纯二进制文件（给CPU就可以直接运行）；elf是二进制可执行文件（里面参杂了些和指令无关的修饰，是给操作系统的程序加载器使用的）</p>
-</li>
-</ol>
-<h1 id="MBR程序"><a href="#MBR程序" class="headerlink" title="MBR程序"></a>MBR程序</h1><p>编写文本文件 mbr.S </p>
-<pre><code>; 主引导程序 MBR ：实现屏幕上打印字符&#39;1 MBR&#39;
-
-SECTION MBR vstart=0x7c00
-    ;vstart 指定程序装载地址位0x7c00（约定的MBR装载到内存上的地址）
-
-    mov ax,cs
-    mov ds,ax
-    mov es,ax
-    mov ss,ax
-    mov fs,ax
-    ;利用CS=0初始化各个段寄存器
-    mov sp,0x7c00
-    ;栈顶指针sp指向MBR代码装载处0x7c00，MBR代码向下增长，栈顶指针向上增长，二者不会相互影响
-
-;------------------------------------------------------------------------------------------
-    ;以下代码利用BIOS提供的int 10中断的6号子功能，实现上卷窗口
-
-    mov ax,0x600
-    mov bx,0x700
-    mov cx,0
-    mov dx,0x184f
-
-    int 0x10
-
-;------------------------------------------------------------------------------------------
-    ;以下代码利用BIOS提供的int 10中断的3号子功能，获取光标位置，在光标处打印字符
-
-    mov ah,3
-    mov bh,0
-    
-    int 0x10
-
-;------------------------------------------------------------------------------------------
-    ;以下代码利用BIOS提供的int 10中断的13号子功能，实现打印字符
-
-    mov ax,message
-    mov bp,ax
-
-    mov cx,5
-    mov ax,0x1301
-    mov bx,0x2
-    
-    int 0x10
-
-;------------------------------------------------------------------------------------------
-
-    jmp $ ;实现死循环，让程序悬停
-
-    message db &quot;1 MBR&quot;
-    times 510-($-$$) db 0  ;确保MBR程序有512个字节，不能少也不能多
-    db 0x55,0xaa           ;确保MBR程序最后两个字节为0x55和0xaa，BIOS得以识别
-</code></pre>
-<p><strong>PS:代码中关于BIOS提供的历程int 10具体格式注释中并没有给出，因为这块不重要，如果想知道为什么int 10的功能调用要这么编写可以查BIOS的手册，也可以查看<code>操作系统真象还原 P61</code></strong></p>
-<h1 id="编译、装载并启动"><a href="#编译、装载并启动" class="headerlink" title="编译、装载并启动"></a>编译、装载并启动</h1><ol>
-<li><p>编译：</p>
-<p> 接下来我们要用<code>nasm -f bin mbr.S -o mbr.bin</code>(也可以简写成<code>nasm -o mbr.bin mbr.s</code>)对mbr.S进行编译,编译成功你就可以看到mbr.bin文件了</p>
-<p> 我们还得用指令<code>ls -l</code>查看当前目录下所有文件及属性，检测一下mbr.bin文件的大小，是不是刚好512字节不多也不少</p>
-</li>
-<li><p>转载：</p>
-<p> 然后我们要把mbr.bin文件装载到虚拟磁盘<code>hd60M.img</code>中的0盘0道1扇区处，可以使用dd命令：<code>dd if=/home/sparkle2/codeset/mbr.bin of=/home/sparkle2/bochs/hd60M.img bs=512 count=1 conv=notrunc</code></p>
-<p> dd命令中<code>if</code>指定要读取的文件路径；<code>of</code>指定装载文件的路径；<code>bs</code>指令块的大小，也就是字节数；<code>cout</code>指令拷贝的块数；<code>conv</code>指定转换文件方式，在追加数据时conv最好用notrunc<br> 方式</p>
-</li>
-<li><p>启动</p>
-<p> 最后我们进入安装目录下，使用命令<code>bin/bochs -f bochsrc.disk</code>启动，bochs emulator处于黑屏状态 在控制台按<code>c</code>进入调试模式，看到如下结果则大功告成：</p>
-<p> <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%BA%8C%EF%BC%89/img2.png" alt="img"></p>
-<p> <strong>PS:我们可以注意到启动后，电脑上有两个窗口，一个是bochs emulator，另一个是控制台；bochs emulator就是我们模拟的机器。我在关闭bochs emulator是遇到一些问题，请不要直接点击bochs emulator窗口右上角的红叉，会引发关闭不了的问题。正确的做法是可以点击bochs emulator右上角第二行的电源键关闭模拟机器，再关闭控制台。也可以在控制台<code>Ctrl+C</code>退出调试模式，然后输入<code>q</code>退出该进程。</strong></p>
-</li>
-</ol>
-<h1 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h1><p>到这里我们就正式接受了电脑启动后的第二棒接力棒，开始正式掌权了。如果看完本文章还有疑惑，建议看下<a target="_blank" rel="noopener" href="https://love6.blog.csdn.net/article/details/117782012">《操作系统真象还原》第二章 —- 编写MBR主引导记录 初尝编写的快乐 雏形已显！</a></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/08/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%80%EF%BC%89/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Sparkle">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Sparkle's Space">
-      <meta itemprop="description" content="If there is no torchlight in the future, I will be the only light.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | Sparkle's Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/11/08/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%80%EF%BC%89/" class="post-title-link" itemprop="url">自制简易操作系统（一）</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2023-11-08 15:08:46" itemprop="dateCreated datePublished" datetime="2023-11-08T15:08:46+08:00">2023-11-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2023-11-09 15:06:51" itemprop="dateModified" datetime="2023-11-09T15:06:51+08:00">2023-11-09</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>本系列记录我跟随<code>《操作系统真象还原》</code>制作一个简易的操作系统的全过程</p>
-<h1 id="安装VMware"><a href="#安装VMware" class="headerlink" title="安装VMware"></a>安装VMware</h1><p>VMware是一款可以帮你轻松建立并管理虚拟机的工具。<code>操作系统真象还原</code>推荐使用虚拟机管理工具virtualBox，但由于我之前使用过VMware所以选择继续使用VMware</p>
-<p>VMware的许可证密钥可以在网上轻松获得</p>
-<p>具体的安装步骤请参照<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1M94y1U7nc/?spm_id_from=333.1007.top_right_bar_window_history.content.click&vd_source=ed3f2c04c40cfc2a1c4f1c34717b21df">八分钟完成VMware和ubuntu系统安装</a>的前半部分</p>
-<h1 id="安装Ubuntu"><a href="#安装Ubuntu" class="headerlink" title="安装Ubuntu"></a>安装Ubuntu</h1><p>Ubuntu是以Linux为内核的操作系统，也是我们将来要自制简易操作系统的环境。<code>操作系统真象还原</code>推荐虚拟机安装Centos操作系统（二者都是Linux内核，听说Centos7会有些问题所以选择Ubuntu）</p>
-<p>其中我的虚拟机设置是：2*2核、40G硬盘、2G内存；Ubuntu版本是20.04.6（兼容gcc 4）</p>
-<p>具体的安装步骤请参照<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1M94y1U7nc/?spm_id_from=333.1007.top_right_bar_window_history.content.click&vd_source=ed3f2c04c40cfc2a1c4f1c34717b21df">八分钟完成VMware和ubuntu系统安装</a>的后半部分</p>
-<p><strong>PS：从安装完Ubuntu后应该在执行每一个重要的步骤前给虚拟机拍一个快照，如果执行出错了，我们就可以回到快照处，保证虚拟机的正确性</strong><br><strong>安装Ubuntu时Language选项请选择英语，可以省去很多后续麻烦</strong></p>
-<h1 id="安装VMware-Tool"><a href="#安装VMware-Tool" class="headerlink" title="安装VMware Tool"></a>安装VMware Tool</h1><p>VMware Tool可以实现主机和虚拟机之间拖拽传输文件以及通用复制粘贴，大大简化两机之间的交互难度</p>
-<p>具体安装步骤请参照该<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1YA411k7Lm/?spm_id_from=333.880.my_history.page.click&vd_source=ed3f2c04c40cfc2a1c4f1c34717b21df">VMwareTools安装教程</a></p>
-<p>如果在执行第二步Ubuntu时不是自定义安装而是简易安装，就有可能会遇到一个问题：ubuntu安装VMware-tools时，虚拟机中的选项是灰色的，点击不了。那么请参考<a target="_blank" rel="noopener" href="https://blog.csdn.net/zhvngchvng/article/details/108603053">ubuntu安装VMware-tools时，虚拟机中的选项是灰色的，点击不了</a></p>
-<p><strong>PS：有的虚拟机安装完操作系统就自带安装VMware Tool了，请安装完Ubuntu看看虚拟机菜单，如果选项是’重新安装BMware Tool’就代表已经按照完毕</strong></p>
-<h1 id="安装Bochs"><a href="#安装Bochs" class="headerlink" title="安装Bochs"></a>安装Bochs</h1><p>Bochs是一个x86硬件平台的开源模拟器，它可以模拟各种硬件的配置。Bochs模拟的是整个PC平台，包括I&#x2F;O设备、内存和BIOS，某种程度上来说Bochs也是一个虚拟机，我们未来就是要在Bochs上实现操作系统的制作。</p>
-<p>我安装的是Bochs2.6.8，Bochs的具体安装步骤请参考<a target="_blank" rel="noopener" href="https://love6.blog.csdn.net/article/details/117751327">《操作系统真象还原》第一章 —- 安装Vmware Station 安装Ubuntu 装载配置Bochs 安装Vmware tools 开始乘帆历险！</a>上半部分。</p>
-<p>Bochs的下载我们可以在主机上下载完压缩包后再直接复制到虚拟机里</p>
-<p>在解压后的文件夹下打开终端并输入命令</p>
-<pre><code>./configure \
---prefix=/home/sparkle2/bochs \
---enable-debugger \
---enable-disasm \
---enable-iodebug \
---enable-x86-debugger \
-LIBS=&#39;-lX11&#39; \
---with-x \
---with-x11
-
-#上面的代码中，prefix指定的是安装bochs的路径
-#LIBS这一行是原书上没有的，是我遇到第四个报错后查阅资料添加的
-#除了最后一句命令外每一句结尾都是&#39; \&#39;代表着命令还未输入完，运行换行继续输入
-</code></pre>
-<p>等到上述命令得以正确执行后，还需要在Bochs的解压目录下执行两条命令：</p>
-<pre><code>make
-make install
-</code></pre>
-<p>Bochs就安装成功了，我们可以在指定路径下看到安装后的bochs文件夹</p>
-<p>整个安装过程中我遇到了四个报错</p>
-<ol>
-<li>缺少C编译器</li>
-<li>C++ preprocessor fails sanity check</li>
-<li>“ERROR: X windows gui was selected, but X windows libraries were not found.</li>
-<li>undefined reference to symbol ‘XSetForeground’</li>
-</ol>
-<p>其中前两个报错在上述文章中都已解决，第三个报错请参照<a target="_blank" rel="noopener" href="https://blog.csdn.net/geeker_12/article/details/11409009">Ubuntu下安装Bochs各种奇怪错误汇总</a>，第四个报错请参考文章<a target="_blank" rel="noopener" href="https://blog.csdn.net/cloudblaze/article/details/52752912">[乱七八糟]bochs编译错误之’XSetForeground’</a></p>
-<p><strong>PS:在使用apt命令更新或下载一些东西时，有时候需要换源，在etc&#x2F;apt&#x2F;source.list文件中把下载源改为中国地区,否则会出现下载慢下载失败等问题</strong></p>
-<h1 id="配置Bochs"><a href="#配置Bochs" class="headerlink" title="配置Bochs"></a>配置Bochs</h1><p>配置Bochs请参照<a target="_blank" rel="noopener" href="https://love6.blog.csdn.net/article/details/117751327">《操作系统真象还原》第一章 —- 安装Vmware Station 安装Ubuntu 装载配置Bochs 安装Vmware tools 开始乘帆历险！</a>下半部分</p>
-<p>我的配置文件如下：</p>
-<pre><code>megs: 32
-# megs书本是32，博客是512，我跟着书本走
-
-romimage: file=/home/sparkle2/bochs/share/bochs/BIOS-bochs-latest
-vgaromimage: file=/home/sparkle2/bochs/share/bochs/VGABIOS-lgpl-latest
-
-boot: disk
-
-log: bochs.out
-
-mouse:enabled=0
-keyboard:keymap=/home/sparkle2/bochs/share/bochs/keymaps/x11-pc-us.map
-
-ata0:enabled=1,ioaddr1=0x1f0,ioaddr2=0x3f0,irq=14
-
-ata0-master: type=disk, path=&quot;hd60M.img&quot;, mode=flat,cylinders=121,heads=16,spt=63
-#新加入的代码，也就是新建立的虚拟磁盘
-
-# gdbstub:enabled=1,port=1234,text_base=0,data_base=0,bss_base=0
-</code></pre>
-<h1 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h1><p>到此，第一步环境的部署就做完了，第二步就可以开始正式写代码了。</p>
-<p>只是环境部署就用了将近两天时间，期间反复下载了4次虚拟机，长路漫漫。</p>
 
       
     </div>
