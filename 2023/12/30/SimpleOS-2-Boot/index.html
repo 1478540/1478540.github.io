@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="整体设计方案 如图电脑的启动后接力棒的第一棒从BIOS开始，第二棒MBR负责把硬盘上的loader加载到内存里，第三棒loader处理完5个子功能后把接力棒正式交给内核。 数据结构无 函数表 boot&#x2F;mbr.S   &#x2F;*   @brief: 该函数负责把磁盘上的loader装载到内存里(汇编函数&#x2F;寄存器传参)   @param: loader_start_sector是loader的L">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SimpleOS-2-Boot">
+<meta property="og:url" content="http://example.com/2023/12/30/SimpleOS-2-Boot/index.html">
+<meta property="og:site_name" content="Sparkle&#39;s Space">
+<meta property="og:description" content="整体设计方案 如图电脑的启动后接力棒的第一棒从BIOS开始，第二棒MBR负责把硬盘上的loader加载到内存里，第三棒loader处理完5个子功能后把接力棒正式交给内核。 数据结构无 函数表 boot&#x2F;mbr.S   &#x2F;*   @brief: 该函数负责把磁盘上的loader装载到内存里(汇编函数&#x2F;寄存器传参)   @param: loader_start_sector是loader的L">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/SimpleOS-2-Boot/img4.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-2-Boot/img11.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-2-Boot/img1.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-2-Boot/img2.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-2-Boot/img3.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-2-Boot/img5.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-2-Boot/img6.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-2-Boot/img7.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-2-Boot/img8.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-2-Boot/img9.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-2-Boot/img10.png">
+<meta property="article:published_time" content="2023-12-30T07:45:05.000Z">
+<meta property="article:modified_time" content="2023-12-31T08:30:38.512Z">
+<meta property="article:author" content="Sparkle">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/SimpleOS-2-Boot/img4.png">
+
+
+<link rel="canonical" href="http://example.com/2023/12/30/SimpleOS-2-Boot/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2023/12/30/SimpleOS-2-Boot/","path":"2023/12/30/SimpleOS-2-Boot/","title":"SimpleOS-2-Boot"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>SimpleOS-2-Boot | Sparkle's Space</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Sparkle's Space</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B4%E4%BD%93%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88"><span class="nav-number">1.</span> <span class="nav-text">整体设计方案</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">数据结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%87%BD%E6%95%B0%E8%A1%A8"><span class="nav-number">3.</span> <span class="nav-text">函数表</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%87%BD%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="nav-number">4.</span> <span class="nav-text">关键函数说明</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%83%8C%E6%99%AF%E7%9F%A5%E8%AF%86"><span class="nav-number">5.</span> <span class="nav-text">背景知识</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8E%E5%AE%9E%E6%A8%A1%E5%BC%8F%E8%BF%9B%E5%85%A5%E4%BF%9D%E6%8A%A4%E6%A8%A1%E5%BC%8F"><span class="nav-number">5.1.</span> <span class="nav-text">从实模式进入保护模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GDT-%E6%AE%B5%E6%8F%8F%E8%BF%B0%E7%AC%A6-GDTR-%E6%AE%B5%E9%80%89%E6%8B%A9%E5%AD%90"><span class="nav-number">5.2.</span> <span class="nav-text">GDT-段描述符-GDTR-段选择子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E7%BA%A7%E5%88%86%E9%A1%B5"><span class="nav-number">5.3.</span> <span class="nav-text">二级分页</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%AF%E7%94%A8%E5%88%86%E9%A1%B5%E6%9C%BA%E5%88%B6"><span class="nav-number">5.4.</span> <span class="nav-text">启用分页机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#kernel%E5%88%9D%E5%A7%8B%E5%8C%96-elf%E6%96%87%E4%BB%B6%E7%9A%84%E6%A0%BC%E5%BC%8F%E6%8B%93%E5%B1%95"><span class="nav-number">5.5.</span> <span class="nav-text">kernel初始化-elf文件的格式拓展</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B7%A5%E5%85%B7%E5%9B%BE%E8%A1%A8"><span class="nav-number">6.</span> <span class="nav-text">工具图表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%8E%E7%AB%AF%E7%89%A9%E7%90%86%E5%86%85%E5%AD%981MB%E5%B8%83%E5%B1%80"><span class="nav-number">6.1.</span> <span class="nav-text">低端物理内存1MB布局</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A3%81%E7%9B%98%E9%A9%B1%E5%8A%A8%E7%9B%B8%E5%85%B3%E5%AF%84%E5%AD%98%E5%99%A8"><span class="nav-number">6.2.</span> <span class="nav-text">磁盘驱动相关寄存器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%99%E6%93%8D%E4%BD%9C%E6%97%B6Command%E5%AF%84%E5%AD%98%E5%99%A8%E5%8F%AF%E4%BB%A5%E5%86%99%E5%85%A5%E4%B8%89%E4%B8%AA%E5%91%BD%E4%BB%A4"><span class="nav-number">6.2.1.</span> <span class="nav-text">写操作时Command寄存器可以写入三个命令:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8E%E7%AB%AF%E5%8F%A3%E4%BA%A4%E4%BA%92%E7%9A%84in-out%E6%8C%87%E4%BB%A4"><span class="nav-number">6.2.2.</span> <span class="nav-text">与端口交互的in&#x2F;out指令:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A1%AC%E7%9B%98%E6%93%8D%E4%BD%9C%E7%BA%A6%E5%AE%9A%E9%A1%BA%E5%BA%8F"><span class="nav-number">6.2.3.</span> <span class="nav-text">硬盘操作约定顺序</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E6%AE%B5%E7%9B%B8%E5%85%B3"><span class="nav-number">6.3.</span> <span class="nav-text">分段相关</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AE%B5%E6%8F%8F%E8%BF%B0%E7%AC%A6%E6%A0%BC%E5%BC%8F"><span class="nav-number">6.3.1.</span> <span class="nav-text">段描述符格式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AE%B5%E9%80%89%E6%8B%A9%E5%AD%90%E6%A0%BC%E5%BC%8F"><span class="nav-number">6.3.2.</span> <span class="nav-text">段选择子格式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#GDTR%E5%AF%84%E5%AD%98%E5%99%A8"><span class="nav-number">6.3.3.</span> <span class="nav-text">GDTR寄存器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E9%A1%B5%E7%9B%B8%E5%85%B3"><span class="nav-number">6.4.</span> <span class="nav-text">分页相关</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A1%B5%E7%9B%AE%E5%BD%95%E5%9F%BA%E5%9D%80%E5%AF%84%E5%AD%98%E5%99%A8CR3"><span class="nav-number">6.4.1.</span> <span class="nav-text">页目录基址寄存器CR3</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A1%B5%E8%A1%A8%E9%A1%B9%E5%92%8C%E9%A1%B5%E7%9B%AE%E5%BD%95%E9%A1%B9%E6%A0%BC%E5%BC%8F"><span class="nav-number">6.4.2.</span> <span class="nav-text">页表项和页目录项格式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#elf%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F%E7%9B%B8%E5%85%B3"><span class="nav-number">6.5.</span> <span class="nav-text">elf文件格式相关</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Sparkle"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Sparkle</p>
+  <div class="site-description" itemprop="description">If there is no torchlight in the future, I will be the only light.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/12/30/SimpleOS-2-Boot/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Sparkle">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sparkle's Space">
+      <meta itemprop="description" content="If there is no torchlight in the future, I will be the only light.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="SimpleOS-2-Boot | Sparkle's Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          SimpleOS-2-Boot
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2023-12-30 15:45:05" itemprop="dateCreated datePublished" datetime="2023-12-30T15:45:05+08:00">2023-12-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2023-12-31 16:30:38" itemprop="dateModified" datetime="2023-12-31T16:30:38+08:00">2023-12-31</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="整体设计方案"><a href="#整体设计方案" class="headerlink" title="整体设计方案"></a>整体设计方案</h1><p><img src="/img/SimpleOS-2-Boot/img4.png" alt="img"></p>
+<p>如图电脑的启动后接力棒的第一棒从BIOS开始，第二棒MBR负责把硬盘上的loader加载到内存里，第三棒loader处理完5个子功能后把接力棒正式交给内核。</p>
+<h1 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h1><p>无</p>
+<h1 id="函数表"><a href="#函数表" class="headerlink" title="函数表"></a>函数表</h1><ul>
+<li><p>boot&#x2F;mbr.S</p>
+<pre><code>  /*
+  @brief: 该函数负责把磁盘上的loader装载到内存里(汇编函数/寄存器传参)
+  @param: loader_start_sector是loader的LBA28扇区地址
+          loader_base_addr是内存起始地址
+          sector_cnt是移动的扇区数目
+  @retval:无
+  */
+  void loader_ready_proc(loader_start_sector,loader_base_addr,sector_cnt);
+</code></pre>
+</li>
+<li><p>boot&#x2F;loader.S</p>
+<pre><code>  /*
+  @brief: 该函数负责5件事分布如下：(汇编函数)
+          1. 计算内存并存储到0xb00
+          2. 从实模式到保护模式
+          3. 构建内核页表页目录，开启分页机制
+          4. 加载kernel到内核中
+          5. 初始化kernel
+  @param: 无
+  @retval:无
+  */
+  void loader_start();
+</code></pre>
+</li>
+</ul>
+<h1 id="关键函数说明"><a href="#关键函数说明" class="headerlink" title="关键函数说明"></a>关键函数说明</h1><ul>
+<li><p>boot&#x2F;loader.S&#x2F;loader_start()&#x2F;3.构建内核页表页目录，开启分页机制</p>
+<p>  <img src="/img/SimpleOS-2-Boot/img11.png" alt="img"></p>
+<ol>
+<li><p>虚拟空间<code>0x00~0x100000</code>和<code>0xc0000000~0xc0100000</code>两个区间都映射到物理空间的低端1MB内核代码区间</p>
+</li>
+<li><p>PD[1023]指向页目录本身，为的是实现在开启分页机制后还能正确访问页表和页目录</p>
+<p> 如果虚地址高10位全为1、虚地址中10位全为0，就把PD[0]当成自己的页表项，最终指向物理页地址0x101000<br> 如果虚地址高10位全为1、虚地址中10位全为1，就把PD[1023]当成自己的页表项,最终指向物理页地址0x100000<br> 如果虚地址高10位全为1、虚地址中10位处于一定范围内，就把PD[768]~PD[1022]当成自己的页表项目，最终指向物理地址0x101000及以上空间</p>
+<p> 总结出不变的规律：</p>
+<ul>
+<li>要获取页目录表物理地址：让虚位高20位地址全为1，低12位全为0，即0xfffff000。这就是页目录自身的起始物理地址</li>
+<li>要访问页目录中的页目录项，即获取页表物理地址：使虚拟地址为0xfffffxxx,其中xxx是页目录项的索引*4</li>
+<li>访问页表中的页表项:虚拟地址公式为 0x3ff&lt;&lt;22+中间10位&lt;&lt;12+低12位（中间10位是页表的索引，低12位为页表内的偏移地址）</li>
+</ul>
+</li>
+</ol>
+</li>
+</ul>
+<h1 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h1><h2 id="从实模式进入保护模式"><a href="#从实模式进入保护模式" class="headerlink" title="从实模式进入保护模式"></a>从实模式进入保护模式</h2><p>从实模式到保护模式我们要执行三个步骤：</p>
+<ol>
+<li>打开A20地址线</li>
+<li>加载GDT</li>
+<li>将CR0的PE位置1</li>
+</ol>
+<h2 id="GDT-段描述符-GDTR-段选择子"><a href="#GDT-段描述符-GDTR-段选择子" class="headerlink" title="GDT-段描述符-GDTR-段选择子"></a>GDT-段描述符-GDTR-段选择子</h2><h2 id="二级分页"><a href="#二级分页" class="headerlink" title="二级分页"></a>二级分页</h2><h2 id="启用分页机制"><a href="#启用分页机制" class="headerlink" title="启用分页机制"></a>启用分页机制</h2><p>启用分页机制要做的三个步骤</p>
+<ol>
+<li>准备好页目录以及页表</li>
+<li>将页目录地址写入控制寄存器cr3</li>
+<li>寄存器cr0的PG位置1</li>
+</ol>
+<h2 id="kernel初始化-elf文件的格式拓展"><a href="#kernel初始化-elf文件的格式拓展" class="headerlink" title="kernel初始化-elf文件的格式拓展"></a>kernel初始化-elf文件的格式拓展</h2><h1 id="工具图表"><a href="#工具图表" class="headerlink" title="工具图表"></a>工具图表</h1><h2 id="低端物理内存1MB布局"><a href="#低端物理内存1MB布局" class="headerlink" title="低端物理内存1MB布局"></a>低端物理内存1MB布局</h2><p><img src="/img/SimpleOS-2-Boot/img1.png" alt="img"></p>
+<ol>
+<li><p>我们整个SimpleOS的代码实际上只会装载到<code>0x500~0x9FFFF</code>这块内存区间</p>
+</li>
+<li><p>512字节的MBR将会装载到<code>0x7C00~0x7DFF</code>内存区间，（MBR运行一次就没用了，可以被覆盖）</p>
+</li>
+<li><p>2048字节的loader将会加载到<code>0x900~0x1100</code>内存区间</p>
+</li>
+<li><p>200扇区kernel.bin，将其装载在<code>0x70000~0x89000</code>,内核代码应该装载在可用空间的尽可能高位，为内核映像文件腾出位置</p>
+</li>
+<li><p>0xc0001500(虚)作为内核代码的入口</p>
+</li>
+<li><p>一般来说可用空间的上界限0xc009fc00是最好的栈顶，但是为了让内存的每一块都形成4KB的自然页，所以栈顶最好取4KB的整数倍，因此栈顶设置为<code>0xc009f000</code></p>
+</li>
+<li><p><code>0xc009e000~0xc009f00</code>分给内核主线程PCB</p>
+</li>
+<li><p><code>0xc009a000~0xc009e000</code>这四个页的空间(可管理一共512MB空间)大小全给位图(物理内核内存池位图、物理用户内存池位图、虚拟内核内存池位图)</p>
+</li>
+</ol>
+<h2 id="磁盘驱动相关寄存器"><a href="#磁盘驱动相关寄存器" class="headerlink" title="磁盘驱动相关寄存器"></a>磁盘驱动相关寄存器</h2><p><img src="/img/SimpleOS-2-Boot/img2.png" alt="img"></p>
+<p><img src="/img/SimpleOS-2-Boot/img3.png" alt="img"></p>
+<h3 id="写操作时Command寄存器可以写入三个命令"><a href="#写操作时Command寄存器可以写入三个命令" class="headerlink" title="写操作时Command寄存器可以写入三个命令:"></a>写操作时Command寄存器可以写入三个命令:</h3><ol>
+<li>identify:0xEC 即磁盘识别</li>
+<li>read secotr:0x20</li>
+<li>write sector: 0x30</li>
+</ol>
+<h3 id="与端口交互的in-out指令"><a href="#与端口交互的in-out指令" class="headerlink" title="与端口交互的in&#x2F;out指令:"></a>与端口交互的in&#x2F;out指令:</h3><ol>
+<li><p>in指令用于从端口中读取数据，格式如下：</p>
+<pre><code> in al,dx
+ in ax,dx
+</code></pre>
+<p> 只要使用in指令，源操作数必须是dx(存放端口号)，而目的操作数是用al，还是ax取决于dx端口指代的寄存器是8位宽还是16位宽</p>
+</li>
+<li><p>out 指令用于往端口中写数据，格式如下：</p>
+<pre><code> out dx,al
+ out dx,ax
+ out 立即数,al
+ out 立即数,ax
+</code></pre>
+<p> out指令的源操作数是ax还是al取决于目标端口指代的寄存器是8位宽还是16位宽，源操作数可以是立即数直接给出端口号，也可以用dx（存放端口号）</p>
+</li>
+</ol>
+<h3 id="硬盘操作约定顺序"><a href="#硬盘操作约定顺序" class="headerlink" title="硬盘操作约定顺序"></a>硬盘操作约定顺序</h3><ol>
+<li>先选择通道，往该通道的sector cout寄存器写入待操作的扇区数</li>
+<li>往通道上的三个LBA写入扇区地址LBA28的低24位</li>
+<li>往device写入LBA28的高4位，指定主从盘，并选择LBA寻址模式</li>
+<li>第四步往该通道的command寄存器写入命令（一旦写入立即执行）</li>
+<li>读取status寄存器，判断硬盘工作是否完成</li>
+<li>将硬盘数据读出(如果是写硬盘则无需这步)</li>
+</ol>
+<h2 id="分段相关"><a href="#分段相关" class="headerlink" title="分段相关"></a>分段相关</h2><h3 id="段描述符格式"><a href="#段描述符格式" class="headerlink" title="段描述符格式"></a>段描述符格式</h3><p><img src="/img/SimpleOS-2-Boot/img5.png" alt="img"></p>
+<ol>
+<li><p>段基址：</p>
+<p> 每个段都有32位的段基址，在段描述符中被拆分成三块存储。</p>
+<p> 为什么被拆分成三块？为的是兼容，实模式下段基址是16位，80286有关短暂的24位段基址，而现在则是32位段基址，为了兼容原本应该连续存放的段基址被拆分为16-8-8的形式。</p>
+<p> 当需要查看段基址时，硬件会把三个分散的段基址取出来并拼接在一起得到一个完整的32位段基址。</p>
+<p> <strong>PS：现在知道为什么有那么多屎山代码了，为了兼容旧时代的程序，屎山代码将成为每一个持续发展产品的最终归宿！</strong></p>
+</li>
+<li><p>段界限：</p>
+<p> 段界限表示段边界的扩展最值，20位段界限被拆分为两部分(当然又是为了兼容)。</p>
+<p> 段界限是一个单位量，单位要么是1字节，要么是4KB(单位由G段决定)。也就是说段的最大寻址范围要么是1*2^20&#x3D;1MB；要么是2*12*2^20&#x3D;4GB。(注意寻址范围!&#x3D;空间)</p>
+<p> 实际的段界限边界值&#x3D;(描述符中段界限+1)*(段界限的粒度大小：4KB&#x2F;1Byte)-1</p>
+</li>
+<li><p>S字段和type字段：</p>
+<p> <img src="/img/SimpleOS-2-Boot/img6.png" alt="img">   </p>
+<p> S字段只有1位：S&#x3D;0 则说明是系统段(凡是硬件允许需要用到的东西，程序入口、调用门之类);S&#x3D;1 则说明是非系统段(凡是软件运行需要的东西，数据、代码、栈都是数据段)</p>
+<p> type字段有4位：type字段只有在S确认后才有意义，X区分代码段和数据段，R代表是否可读，W代表是否可写，C代表是否一致，E代表向上扩展(E&#x3D;0,低地址到高地址)或向下扩展(E&#x3D;1，高地址到低地址)，A代表是否被CPU读过（CPU访问过则置1）</p>
+</li>
+<li><p>DPL（Descriptor Privilege Level）</p>
+<p> 2位的DPL字段表示特权级，特权级从0~3,数字越低特权级越高，操作系统是0级，一般应用程序是3级</p>
+</li>
+<li><p>P字段（Present）：</p>
+<p> 1位P表示段是否存在，有时候内存不够时，保护模式下CPU可能会按页(4KB)的单位将内存换到磁盘里，此时相当于该段不存在，即P&#x3D;0;</p>
+</li>
+<li><p>AVL字段（Avaliable）:</p>
+<p> 1位AVL字段代表该段是否可用，是否可用是对用户来说，对操作系统来说可随意访问此位</p>
+</li>
+<li><p>L字段：</p>
+<p> 1位L字段，L&#x3D;1表示代码段是64位，L&#x3D;0表示代码段是32位，我们在32位地址下编程将其设置为0即可</p>
+</li>
+<li><p>D&#x2F;B字段：</p>
+<p> 1位D&#x2F;B字段指定有效地址及操作数大小，对不同段的意义不同</p>
+<ul>
+<li><p>如果争对代码段，D&#x3D;0时指令中有效地址和操作数是16位，指令有效地址用IP寄存器；D&#x3D;1时指令中有效地址和操作数是32位，指令有效地址用EIP寄存器</p>
+</li>
+<li><p>如果争对栈段，B&#x3D;0时栈使用SP寄存器，栈最大寻址范围为2^16；B&#x3D;1时栈使用ESP寄存器，栈最大寻址范围为2^32</p>
+</li>
+</ul>
+</li>
+<li><p>G段：</p>
+<p> 1位G段用来指定段界限的单位大小，G&#x3D;0时，段界限的单位时1字节；G&#x3D;1时，段界限的单位是4KB</p>
+</li>
+</ol>
+<h3 id="段选择子格式"><a href="#段选择子格式" class="headerlink" title="段选择子格式"></a>段选择子格式</h3><p><img src="/img/SimpleOS-2-Boot/img7.png" alt="img"></p>
+<h3 id="GDTR寄存器"><a href="#GDTR寄存器" class="headerlink" title="GDTR寄存器"></a>GDTR寄存器</h3><p><img src="/img/SimpleOS-2-Boot/img8.png" alt="img"></p>
+<p>如图所示是GDTR的结构，48位寄存器前16位是GDT以字节为单位的界限，后32位是GDT在内存中的起始地址<br><strong>GDT界限范围有16位，也就是占有2^16个字节，而一个表项占有8字节，一个GDT一共可以存储2^16&#x2F;8&#x3D;8192个表项</strong></p>
+<h2 id="分页相关"><a href="#分页相关" class="headerlink" title="分页相关"></a>分页相关</h2><h3 id="页目录基址寄存器CR3"><a href="#页目录基址寄存器CR3" class="headerlink" title="页目录基址寄存器CR3"></a>页目录基址寄存器CR3</h3><p><img src="/img/SimpleOS-2-Boot/img9.png" alt="img"></p>
+<ol>
+<li><p>PCD(Page-level Cache Disable)页表高速缓冲禁止位，别管那么多，置0就行</p>
+</li>
+<li><p>PWT（Page-level Write-Through）页级通写位，别管那么多，置0就行</p>
+</li>
+</ol>
+<h3 id="页表项和页目录项格式"><a href="#页表项和页目录项格式" class="headerlink" title="页表项和页目录项格式"></a>页表项和页目录项格式</h3><p><img src="/img/SimpleOS-2-Boot/img10.png" alt="img"></p>
+<ol>
+<li><p>为什么页目录项的页表物理地址只有20位而不是32位？因为内存是以4KB每页为单位划分的，因此只要20位地址就可以找到对应的页表了</p>
+</li>
+<li><p>为什么页表项的物理页地址也只有20位？这20位足够索引到内存中的对应页了，剩下的12位是段内偏移量由线性地址的最后12位组成</p>
+</li>
+<li><p>AVL是Available位，表示可用，是给软件看的。操作系统可以不管该位</p>
+</li>
+<li><p>G，全局位。G&#x3D;1，则代表缓存在TLB（页表缓冲寄存器）中了，可以不用经过地址转换，直接通过TLB取值</p>
+</li>
+<li><p>PAT（Page Attribute Table）此位比较复杂，直接置0即可</p>
+</li>
+<li><p>D(Dirty)脏位，CPU对一个页进行写操作时，对应的页表项D位置1，表示该页已被修改过</p>
+</li>
+<li><p>A（Accessd）访问位，每当CPU访问过该页时，对应的A位置1。过一段时间后由操作系统同一置0，操作系统可以通过置0的频率来判断该页是否被经常使用</p>
+</li>
+<li><p>US（User&#x2F;Supervisor）普通用户&#x2F;超级用户位，为1表示User级，任意特权程序可访问。为0表示Supervisor级，特权级别3的程序不可访问</p>
+</li>
+<li><p>RW（Read&#x2F;Write）1表示可读可写，0表示可读不可写</p>
+</li>
+<li><p>P（Present） 存在位，P&#x3D;0表示该表不在物理内存中</p>
+</li>
+</ol>
+<h2 id="elf文件格式相关"><a href="#elf文件格式相关" class="headerlink" title="elf文件格式相关"></a>elf文件格式相关</h2>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/12/30/SimpleOS-1-%E7%AE%80%E4%BB%8B/" rel="prev" title="SimpleOS-1-简介">
+                  <i class="fa fa-angle-left"></i> SimpleOS-1-简介
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2023/12/31/SimpleOS-3-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="next" title="SimpleOS-3-内存管理">
+                  SimpleOS-3-内存管理 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Sparkle</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

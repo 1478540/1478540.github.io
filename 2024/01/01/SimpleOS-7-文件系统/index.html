@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="整体设计方案 数据结构&#x2F;* 分区结构:一个分区就是一个文件系统 *&#x2F; struct partition &amp;#123;     uint32_t start_lba;		    &#x2F;&#x2F; 起始扇区     uint32_t sec_cnt;		    &#x2F;&#x2F; 扇区数     struct disk* my_disk;	    &#x2F;&#x2F; 分区所属的硬盘     struct list_elem part_tag">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SimpleOS-7-文件系统">
+<meta property="og:url" content="http://example.com/2024/01/01/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/index.html">
+<meta property="og:site_name" content="Sparkle&#39;s Space">
+<meta property="og:description" content="整体设计方案 数据结构&#x2F;* 分区结构:一个分区就是一个文件系统 *&#x2F; struct partition &amp;#123;     uint32_t start_lba;		    &#x2F;&#x2F; 起始扇区     uint32_t sec_cnt;		    &#x2F;&#x2F; 扇区数     struct disk* my_disk;	    &#x2F;&#x2F; 分区所属的硬盘     struct list_elem part_tag">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img7.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img2.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img3.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img6.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img4.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img5.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img8.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img9.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img10.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img1.png">
+<meta property="article:published_time" content="2024-01-01T02:29:13.000Z">
+<meta property="article:modified_time" content="2024-01-02T04:20:34.549Z">
+<meta property="article:author" content="Sparkle">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img7.png">
+
+
+<link rel="canonical" href="http://example.com/2024/01/01/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2024/01/01/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/","path":"2024/01/01/SimpleOS-7-文件系统/","title":"SimpleOS-7-文件系统"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>SimpleOS-7-文件系统 | Sparkle's Space</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Sparkle's Space</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B4%E4%BD%93%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88"><span class="nav-number">1.</span> <span class="nav-text">整体设计方案</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">数据结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%87%BD%E6%95%B0%E8%A1%A8"><span class="nav-number">3.</span> <span class="nav-text">函数表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-fs-c"><span class="nav-number">3.1.</span> <span class="nav-text">fs&#x2F;fs.c</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-dir-c"><span class="nav-number">3.2.</span> <span class="nav-text">fs&#x2F;dir.c</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-inode-c"><span class="nav-number">3.3.</span> <span class="nav-text">fs&#x2F;inode.c</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-file-c"><span class="nav-number">3.4.</span> <span class="nav-text">fs&#x2F;file.c</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%87%BD%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="nav-number">4.</span> <span class="nav-text">关键函数说明</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%88%9D%E5%A7%8B%E5%8C%96%E5%87%BD%E6%95%B0"><span class="nav-number">4.1.</span> <span class="nav-text">文件系统初始化函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0"><span class="nav-number">4.2.</span> <span class="nav-text">文件操作相关函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B7%A5%E4%BD%9C%E8%B7%AF%E5%BE%84%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0"><span class="nav-number">4.3.</span> <span class="nav-text">工作路径相关函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-file-c-file-create"><span class="nav-number">4.4.</span> <span class="nav-text">fs&#x2F;file.c&#x2F;file_create()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-file-c-file-write"><span class="nav-number">4.5.</span> <span class="nav-text">fs&#x2F;file.c&#x2F;file_write()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-file-c-file-read"><span class="nav-number">4.6.</span> <span class="nav-text">fs&#x2F;file.c&#x2F;file_read()</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%83%8C%E6%99%AF%E7%9F%A5%E8%AF%86"><span class="nav-number">5.</span> <span class="nav-text">背景知识</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#inode%E3%80%81super-block%E3%80%81%E7%9B%AE%E5%BD%95%E3%80%81%E7%9B%AE%E5%BD%95%E9%A1%B9%E3%80%81%E8%B6%85%E7%BA%A7%E5%9D%97%E4%B8%8E%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%B8%83%E5%B1%80"><span class="nav-number">5.1.</span> <span class="nav-text">inode、super_block、目录、目录项、超级块与文件系统布局</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A1%AC%E7%9B%98%E9%A9%B1%E5%8A%A8"><span class="nav-number">5.2.</span> <span class="nav-text">硬盘驱动</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B7%A5%E5%85%B7%E5%9B%BE%E8%A1%A8"><span class="nav-number">6.</span> <span class="nav-text">工具图表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%B8%83%E5%B1%80"><span class="nav-number">6.1.</span> <span class="nav-text">文件系统布局</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Sparkle"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Sparkle</p>
+  <div class="site-description" itemprop="description">If there is no torchlight in the future, I will be the only light.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/01/01/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Sparkle">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sparkle's Space">
+      <meta itemprop="description" content="If there is no torchlight in the future, I will be the only light.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="SimpleOS-7-文件系统 | Sparkle's Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          SimpleOS-7-文件系统
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2024-01-01 10:29:13" itemprop="dateCreated datePublished" datetime="2024-01-01T10:29:13+08:00">2024-01-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2024-01-02 12:20:34" itemprop="dateModified" datetime="2024-01-02T12:20:34+08:00">2024-01-02</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="整体设计方案"><a href="#整体设计方案" class="headerlink" title="整体设计方案"></a>整体设计方案</h1><p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img7.png" alt="img"></p>
+<h1 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h1><pre><code>/* 分区结构:一个分区就是一个文件系统 */
+struct partition &#123;
+    uint32_t start_lba;		    // 起始扇区
+    uint32_t sec_cnt;		    // 扇区数
+    struct disk* my_disk;	    // 分区所属的硬盘
+    struct list_elem part_tag;	// 用于队列中的标记，用于将分区形成链表进行管理
+    char name[8];		        // 分区名称
+
+    struct super_block* sb;	    // 本分区的超级块
+    struct bitmap block_bitmap;	// 块位图
+    struct bitmap inode_bitmap;	// inode位图
+    struct list open_inodes;	// 本分区打开的inode缓冲队列
+&#125;;
+
+/* 超级块：文件系统元信息的配置文件 */
+struct super_block &#123;
+    uint32_t magic;		            // 用来标识文件系统类型,支持多文件系统的操作系统通过此标志来识别文件系统类型
+
+    uint32_t sec_cnt;		        // 本分区总共的扇区数
+    uint32_t inode_cnt;		        // 本分区中inode数量
+    uint32_t part_lba_base;	        // 本分区的起始lba地址
+
+    uint32_t block_bitmap_lba;	    // 块位图本身起始扇区地址
+    uint32_t block_bitmap_sects;    // 扇区位图本身占用的扇区数量
+
+    uint32_t inode_bitmap_lba;	    // i结点位图起始扇区lba地址
+    uint32_t inode_bitmap_sects;	// i结点位图占用的扇区数量
+
+    uint32_t inode_table_lba;	    // i结点表起始扇区lba地址
+    uint32_t inode_table_sects;	    // i结点表占用的扇区数量
+
+    uint32_t data_start_lba;	    // 数据区开始的第一个扇区号
+    uint32_t root_inode_no;	        // 根目录所在的I结点号
+    uint32_t dir_entry_size;	    // 目录项大小
+
+    uint8_t  pad[460];		        // 加上460字节,凑够512字节1扇区大小
+    
+&#125; __attribute__ ((packed));
+
+/* inode：文件的实质 */
+struct inode &#123;
+    uint32_t i_no;                  // inode编号
+
+    uint32_t i_size;                //当此inode是普通文件时,i_size是指普通文件大小
+                                    //若此inode是目录,i_size是指该目录下所有目录项大小之和*/
+
+    uint32_t i_open_cnts;           // 记录此文件被打开的次数
+    bool write_deny;	            // 写文件不能并行,进程写文件前检查此标识
+                        
+    uint32_t i_sectors[13];         // i_sectors[0-11]是直接块,
+                                    // i_sectors[12]用来存储一级间接块指针
+    struct list_elem inode_tag;     //用于文件缓冲队列中
+&#125;;
+
+/* 文件结构 */
+struct file
+&#123;
+    uint32_t fd_pos;        // 记录当前文件操作的偏移地址，文件尾为-1
+    uint32_t fd_flag;       // 文件操作标识符
+    struct inode *fd_inode;
+&#125;;
+
+/* 目录结构 */
+struct dir &#123;
+    struct inode* inode;   
+    uint32_t dir_pos;	    // 记录在目录内的偏移
+    uint8_t dir_buf[512];   // 目录的数据缓存
+&#125;;
+
+/* 目录项结构 */
+struct dir_entry &#123;
+    char filename[MAX_FILE_NAME_LEN];   // 普通文件或目录名称
+    uint32_t i_no;		                // 普通文件或目录对应的inode编号
+    enum file_types f_type;	            // 文件类型
+&#125;;
+</code></pre>
+<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img2.png" alt="img"></p>
+<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img3.png" alt="img"></p>
+<h1 id="函数表"><a href="#函数表" class="headerlink" title="函数表"></a>函数表</h1><h2 id="fs-fs-c"><a href="#fs-fs-c" class="headerlink" title="fs&#x2F;fs.c"></a>fs&#x2F;fs.c</h2><pre><code>//------------------------文件系统初始化相关函数---------------------------------------
+
+/*
+@brief: 在磁盘上搜索文件系统，落没有则格式化分区创建文件系统
+@detail:1.遍历整个磁盘，对每个已存在的分区创建文件系统
+        2.挂载默认分区
+        3.将当前分区的根目录打开
+        4.初始化文件表
+@param: 无
+@retval:无
+*/
+void filesys_init();
+
+/*
+@brief: 初始化part分区的元信息,创建文件系统
+@detail:初始化超级块、空闲块位图、inode位图、inode数组、根目录并全部写入磁盘
+@param: 略
+@retval:无
+*/
+static void partition_format(struct partition* part);
+
+/*
+@brief: 挂载名为part_name(arg)的分区
+@detail:将硬盘中的超级块、空闲块位图、inode位图全部读取到内存中
+        给cur_part赋值
+@param: 略
+@retval:无
+*/
+static bool mount_partition(struct list_elem *pelem, int arg);
+
+//------------------------文件系统初始化相关函数---------------------------------------
+
+
+//------------------------路径解析相关函数-----------------------
+
+/*
+@brief: 将最上层路径名称解析出来，存储到name_store,并返回子路径
+@param: 略
+@retval:无
+*/
+static char *path_parse(char *pathname, char *name_store);
+
+/*
+@brief: 返回路径深度
+@param: 略
+@retval:无
+*/
+int32_t path_depth_cnt(char *pathname);
+
+/*
+@brief: 搜索文件路径pathname,找到则返回其inode号,否则返回-1
+@param: search_record:记录搜索过程中的父路径
+@retval:无
+@PS：   调用该函数后，会打开目标文件的父目录，并不会关闭，需要调用者关闭该目录
+*/
+static int search_file(const char *pathname, struct path_search_record *searched_record);
+
+//------------------------路径解析相关函数-----------------------
+
+
+//-------------------------系统调用-普通文件相关-------------------------
+
+/*
+@brief: 打开或创建普通文件
+@detail：   1.先搜索该普通文件是否存在
+            2.存在则打开，不存在则创建并打开
+@param: flags:文件操作标识符
+@retval:成功后,返回文件描述符,否则返回-1
+*/
+int32_t sys_open(const char *pathname, uint8_t flags);
+
+/*
+@brief: 关闭文件描述符fd指向的文件
+@detail：   1.调用file_close()关闭普通文件;
+            2.PCB-&gt;fd_table[fd]=-1;令文件描述符对应的数组可用
+@param: flags:文件操作标识符
+@retval:成功返回0,否则返回-1
+*/
+int32_t sys_close(int32_t fd)
+
+/*
+@brief: 将buf中连续count个字节写入文件描述符fd
+@param: 略
+@retval:成功则返回写入的字节数,失败返回-1
+*/
+int32_t sys_write(int32_t fd, const void *buf, uint32_t count);
+
+/*
+@brief: 从文件描述符fd指向的文件中读取count个字节到buf
+@param: 略
+@retval:若成功则返回读出的字节数,到文件尾则返回-1
+*/
+int32_t sys_read(int32_t fd, void *buf, uint32_t count);
+
+/*
+@brief: 重置用于文件读写操作的偏移指针(重置为:offset+文件指针位置)
+@param: whence:文件指针位置标识符
+        offset:相对于文件指针位置的偏移量
+@retval:成功时返回新的偏移量,出错时返回-1
+*/
+int32_t sys_lseek(int32_t fd, int32_t offset, uint8_t whence);
+
+/*
+@brief: 删除普通文件(普通文件已打开则删除失败)
+@param: 略
+@retval:成功返回0,失败返回-1 
+*/
+int32_t sys_unlink(const char *pathname);
+//-------------------------系统调用-普通文件相关-------------------------
+
+
+//-------------------------系统调用-目录文件相关-------------------------
+
+/*
+@brief: 创建目录文件(并不打开)
+@detail:1.申请inode位图，并同步到磁盘
+        2.申请block位图，并同步到磁盘(先分配一个块就够用)
+        3.往inode指向的数据块写入目录项&#39;.&#39;和&#39;..&#39;
+        4.要将本目录的inode初始化，并同步到磁盘(无需申请内存空间)
+        5.将关于本目录的目录项写入父目录数据块(写入磁盘)
+        6.父目录inode更新大小并同步到磁盘
+@param: pathname:目录文件路径
+@retval:成功返回0,失败返回-1 
+*/
+int32_t sys_mkdir(const char *pathname);
+
+/*
+@brief: 打开目录文件，并返回目录指针
+@detail:调用dir_open()来打开目录
+        （目录打开只涉及part-&gt;open_inodes不涉及文件表、文件描述符数组等）
+@param: 略
+@retval:成功返回目录指针,失败返回-1 
+*/
+struct dir *sys_opendir(const char *name);
+
+/*
+@brief: 关闭目录
+@detail:调用dir_close()来关闭目录
+@param: 略
+@retval:成功返回0,失败返回-1
+*/
+int32_t sys_closedir(struct dir *dir);
+
+/*
+@brief: 根据dir当前偏移位置，读取一个目录项，并更新偏移位置(调用dir_read()实现)
+@param: 略
+@retval:成功后返回其目录项地址,到目录尾时或出错时返回NULL
+*/
+struct dir_entry *sys_readdir(struct dir *dir);
+
+/*
+@brief: 把目录dir的指针dir_pos置0
+@param: 略
+@retval:无
+*/
+void sys_rewinddir(struct dir *dir);
+
+/*
+@brief: 删除空目录(调用dir_remove()实现)
+@param: 略
+@retval:成功时返回0,失败时返回-1
+*/
+int32_t sys_rmdir(const char *pathname);
+//-------------------------系统调用-目录文件相关-------------------------
+
+
+//-------------------------系统调用-cwd相关-------------------------
+
+/*
+@brief: 获得父目录的inode编号(利用目录项目&#39;..&#39;)
+@param: 略
+@retval:无
+*/
+static uint32_t get_parent_dir_inode_nr(uint32_t child_inode_nr, void *io_buf);
+
+/*
+@brief: 在inode编号为p_inode_nr的目录中查找inode编号为c_inode_nr的子目录的名字，将名字存入缓冲区path. 
+@param: 略
+@retval:成功返回0,失败返-1
+*/
+static int get_child_dir_name(uint32_t p_inode_nr, uint32_t c_inode_nr, char *path, void *io_buf);
+
+/*
+@brief: 把当前工作目录绝对路径写入buf, size是buf的大小. 
+@detail:根据PCB-&gt;cwd_inode_nr一层层向上追溯求得当前工作目录路径
+@param: 略
+@retval:成功返回buf,失败返NULL
+*/
+char *sys_getcwd(char *buf, uint32_t size);
+
+/*
+@brief: 更改当前工作目录为绝对路径path 
+@detail:实质是修改PCB-&gt;cwd_inode_nr
+@param: 略
+@retval:成功则返回0,失败返回-1
+*/
+int32_t sys_chdir(const char *path);
+//-------------------------系统调用-cwd相关-------------------------
+
+
+//-------------------------系统调用-文件属性相关-------------------------
+/*
+@brief: 在buf中填充文件结构相关信息 
+@param: 略
+@retval:成功时返回0,失败返回-1
+*/
+int32_t sys_stat(const char *path, struct stat *buf);
+
+//-------------------------系统调用-文件属性相关-------------------------
+
+
+//------------------------转换函数----------------------
+/*
+@brief: 将文件描述符转化为文件表的下标
+@param: 略
+@retval:无
+*/
+static uint32_t fd_local2global(uint32_t local_fd);
+
+//------------------------转换函数----------------------
+</code></pre>
+<h2 id="fs-dir-c"><a href="#fs-dir-c" class="headerlink" title="fs&#x2F;dir.c"></a>fs&#x2F;dir.c</h2><pre><code>/*
+@brief: 打开根目录
+@detail:1.利用inode_open()打开根目录
+        2.并给root_dir赋值
+@param: 略
+@retval:无
+*/
+void open_root_dir(struct partition *part);
+
+/*
+@brief: 在分区part上打开节点号为inode_no的目录并返回目录指针 
+@detail:1.利用inode_open()打开目录文件
+        2.给目录结构pdir申请空间，初始化并返回
+        （目录打开只涉及part-&gt;open_inodes不涉及文件表、文件描述符数组等）
+@param: 略
+@retval:无
+*/
+struct dir *dir_open(struct partition *part, uint32_t inode_no);
+
+/*
+@brief: 关闭目录
+@detaili:1.利用inode_close()关闭目录，根目录不能被关闭
+        2.释放目录结构dir的空间
+@param: 略
+@retval:无
+*/
+void dir_close(struct dir *dir);
+
+/*
+@brief: 在目录中寻找指定目录项
+@detail:在part分区内的pdir目录内寻找包含name文件或目录的目录项
+@param: 略
+@retval:找到后返回true并将其目录项存入dir_e,否则返回false
+*/
+bool search_dir_entry(struct partition *part, struct dir *pdir, const char *name, struct dir_entry *dir_e);
+
+/*
+@brief: 在内存中初始化目录项p_de
+@param: 略
+@retval:无
+*/
+void create_dir_entry(char *filename, uint32_t inode_no, uint8_t file_type, struct dir_entry *p_de);
+
+/*
+@brief:     将目录项p_de写入父目录parent_dir中(直接写入磁盘)
+@param:     io_buf:主调函数提供的缓冲区
+@retval:    成功返回true，失败返回false
+@PS：       父目录的inode.size更改过了，但并没有同步到磁盘的inode_table里！！
+            调用者要负责把父目录的inode同步到磁盘
+*/
+bool sync_dir_entry(struct dir *parent_dir, struct dir_entry *p_de, void *io_buf);
+
+/*
+@brief: 把分区part目录pdir中关于inode_no的目录项删除（会将更新过的父目录inode写入磁盘）
+@param: 略
+@retval:成功返回true，失败返回false
+*/
+bool delete_dir_entry(struct partition *part, struct dir *pdir, uint32_t inode_no, void *io_buf);
+
+/*
+@brief: 根据dir当前偏移位置，读取一个目录项，并更新偏移位置
+@param: 略
+@retval:成功返回目录项，失败返回NULL
+*/
+struct dir_entry *dir_read(struct dir *dir);
+
+/*
+@brief: 判断目录是否为空
+@detail:目录为空则代表目录中只含有.和..两个目录项
+@param: 略
+@retval:空返回true,非空返回false
+*/
+bool dir_is_empty(struct dir *dir);
+
+/*
+@brief: 移除目录child_dir
+@detail:1.调用delete_dir_entry在父目录中移除本目录的目录项
+        2.调用inode_release()回收本目录的inode
+@param: 略
+@retval:成功返回目录项，失败返回NULL
+*/
+int32_t dir_remove(struct dir *parent_dir, struct dir *child_dir);
+</code></pre>
+<h2 id="fs-inode-c"><a href="#fs-inode-c" class="headerlink" title="fs&#x2F;inode.c"></a>fs&#x2F;inode.c</h2><pre><code>/*
+@brief: 打开并返回part分区里目标inode节点
+        两个重要的功能：一个是打开inode、一个是返回inode节点
+@detail:1.现在inode缓冲区队列中寻找该inode，若已打开则增加inode-&gt;i_open_cnts并返回inode
+        2.没找到就去磁盘中寻找该inode读取到内存里，并放到inode缓冲区队列，返回inode
+@param: part:目标分区
+        inode_no:要打开的inode节点的i_no号
+@retval:无
+*/
+struct inode *inode_open(struct partition *part, uint32_t inode_no);
+
+/*
+@brief: 关闭inode
+@detail:1.减少inode-&gt;i_open_cnts
+        2.inode-&gt;i_pen_cnts减少后若为0，则将从inode缓冲队列里去除，并释放为inode分配的空间
+@param: 略
+@retval:无
+*/
+void inode_close(struct inode *inode)
+
+/*
+@brief: 初始化new_inode，为其赋值
+@param: 略
+@retval:无
+*/
+void inode_init(uint32_t inode_no, struct inode *new_inode)
+
+
+/*
+@brief: 定位inode在扇区的位置
+@detail:在part里获取inode所在的扇区和扇区内的偏移量并存到inode_pos中
+@param: 略
+@retval:无
+*/
+static void inode_locate(struct partition *part, uint32_t inode_no, struct inode_position *inode_pos);
+
+/*
+@brief: 将inode写入到磁盘的分区part中
+@param: 略
+@retval:无
+*/
+void inode_sync(struct partition *part, struct inode *inode, void *io_buf);
+
+
+/*
+@brief: 回收inode
+@detail:1.回收分配给inode的所有block(修改block_bitmap)
+        2.回收inode(修改inode_bitmap)
+        3.调用inode_delete删除硬盘上的inode数据（可以不用这步）
+        4.确保该inode完全关闭
+@param: 略
+@retval:无
+*/
+void inode_release(struct partition *part, uint32_t inode_no);
+
+/*
+@brief: 将硬盘分区part上的对应的inode清除(修改磁盘上的inode_table)
+@param: inode_no:要清楚的inode号
+@retval:无
+*/
+void inode_delete(struct partition *part, uint32_t inode_no, void *io_buf);
+</code></pre>
+<h2 id="fs-file-c"><a href="#fs-file-c" class="headerlink" title="fs&#x2F;file.c"></a>fs&#x2F;file.c</h2><pre><code>//------------------------文件表 文件描述符数组 相关操作-----------------------
+
+/*
+@brief: 从文件表file_table中获取一个空闲位
+@param: 无
+@retval:成功返回文件表下标,失败返回-1 
+@PS:如果file_table[fd_idx].fd_inode == NULL，则判断文件结构可用
+*/
+int32_t get_free_slot_in_global(void);
+
+/*
+@brief: 将全局描述符(文件表下标)安装到进程或线程自己的文件描述符数组fd_table中 
+@param: globa_fd_idx:文件表的下标（全局文件描述符）
+@retval:成功返回文件描述符(文件描述符数组的下标),失败返回-1
+*/
+int32_t pcb_fd_install(int32_t globa_fd_idx);
+
+//------------------------文件表 文件描述符数组 相关操作-----------------------
+
+
+//---------------------------位图操作-------------------------
+/*
+@brief: 从inode位图里分配一个inode结点 (内存操作)
+@param: 略
+@retval:返回节点号i_no(就是inode在位图中的位置)
+*/
+int32_t inode_bitmap_alloc(struct partition *part);
+
+/*
+@brief: 从block位图里分配1个空闲块(1扇区),返回其扇区地址(内存操作)
+@param: 略
+@retval:略
+*/
+int32_t block_bitmap_alloc(struct partition *part);
+
+/*
+@brief: 同步内存里的位图结构到磁盘上
+@detail:将内存中bitmap第bit_idx位所在的512字节同步到硬盘
+@param: btmp_type:标识是inode位图还是block位图
+@retval:略
+*/
+void bitmap_sync(struct partition *part, uint32_t bit_idx, uint8_t btmp_type);
+//---------------------------位图操作-------------------------
+
+
+//-------------------------------普通文件相关操作--------------------------------
+/*
+@brief: 创建并打开普通文件(磁盘操作)
+@detail:1.创建new_inode(修改inode位图、inode分配内存、inode初始化)
+        2.修改父目录(对应目录项写入父目录(写入磁盘)，修改父目录inode.size)
+        3.同步 父目录inode、new_inode、inode位图
+        4.打开该文件(添加到file_table、PCB中的fd_table、Part中的open_inodes)
+@param: flag:文件操作标识符
+@retval:成功则返回文件描述符,否则返回-1
+*/
+int32_t file_create(struct dir *parent_dir, char *filename, uint8_t flag);
+
+/*
+@brief: 打开编号为inode_no的inode对应的普通文件
+@detail:1.修改file_table
+        2.修改PCB-&gt;fd_table
+        3.调用inode_open()修改part-&gt;open_inodes
+@param: 略
+@retval:成功则返回文件描述符,否则返回-1
+*/
+int32_t file_open(uint32_t inode_no, uint8_t flag);
+
+/*
+@brief: 关闭文件结构
+@detail:1.调用inode_close()修改part-&gt;open_inodes
+        2. file-&gt;fd_inode = NULL; 使文件结构可用
+@param: file:要关闭的文件结构
+@retval:失败返回-1，成功返回0
+@PS:没有将PCB中的文件描述符数组对应位置-1！！！
+    调用者要负责将PCB-&gt;fd_table[]置-1
+*/
+int32_t file_close(struct file *file);
+
+/*
+@brief: 把buf中的count个字节写入file
+@param: 略
+@retval:成功则返回写入的字节数,失败则返回-1
+*/
+int32_t file_write(struct file *file, const void *buf, uint32_t count);
+
+/*
+@brief: 从文件file中读取count个字节写入buf
+@param: 略
+@retval:返回读出的字节数,若到文件尾则返回-1
+*/
+int32_t file_read(struct file *file, void *buf, uint32_t count);
+//-------------------------------普通文件相关操作--------------------------------
+</code></pre>
+<h1 id="关键函数说明"><a href="#关键函数说明" class="headerlink" title="关键函数说明"></a>关键函数说明</h1><h2 id="文件系统初始化函数"><a href="#文件系统初始化函数" class="headerlink" title="文件系统初始化函数"></a>文件系统初始化函数</h2><p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img6.png" alt="img"></p>
+<h2 id="文件操作相关函数"><a href="#文件操作相关函数" class="headerlink" title="文件操作相关函数"></a>文件操作相关函数</h2><p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img4.png" alt="img"></p>
+<h2 id="工作路径相关函数"><a href="#工作路径相关函数" class="headerlink" title="工作路径相关函数"></a>工作路径相关函数</h2><p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img5.png" alt="img"></p>
+<h2 id="fs-file-c-file-create"><a href="#fs-file-c-file-create" class="headerlink" title="fs&#x2F;file.c&#x2F;file_create()"></a>fs&#x2F;file.c&#x2F;file_create()</h2><p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img8.png" alt="img"></p>
+<h2 id="fs-file-c-file-write"><a href="#fs-file-c-file-write" class="headerlink" title="fs&#x2F;file.c&#x2F;file_write()"></a>fs&#x2F;file.c&#x2F;file_write()</h2><p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img9.png" alt="img"></p>
+<h2 id="fs-file-c-file-read"><a href="#fs-file-c-file-read" class="headerlink" title="fs&#x2F;file.c&#x2F;file_read()"></a>fs&#x2F;file.c&#x2F;file_read()</h2><p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img10.png" alt="img"></p>
+<h1 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h1><h2 id="inode、super-block、目录、目录项、超级块与文件系统布局"><a href="#inode、super-block、目录、目录项、超级块与文件系统布局" class="headerlink" title="inode、super_block、目录、目录项、超级块与文件系统布局"></a>inode、super_block、目录、目录项、超级块与文件系统布局</h2><h2 id="硬盘驱动"><a href="#硬盘驱动" class="headerlink" title="硬盘驱动"></a>硬盘驱动</h2><h1 id="工具图表"><a href="#工具图表" class="headerlink" title="工具图表"></a>工具图表</h1><h2 id="文件系统布局"><a href="#文件系统布局" class="headerlink" title="文件系统布局"></a>文件系统布局</h2><p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img1.png" alt="img"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/12/31/SimpleOS-3-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" rel="prev" title="SimpleOS-3-内存管理">
+                  <i class="fa fa-angle-left"></i> SimpleOS-3-内存管理
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2024/01/01/SimpleOS-8-%E5%B7%A5%E5%85%B7%E5%BA%93/" rel="next" title="SimpleOS-8-工具库">
+                  SimpleOS-8-工具库 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Sparkle</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

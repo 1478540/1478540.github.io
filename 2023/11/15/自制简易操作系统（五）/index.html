@@ -64,7 +64,7 @@
 <meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%BA%94%EF%BC%89/img38.png">
 <meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%BA%94%EF%BC%89/img34.png">
 <meta property="article:published_time" content="2023-11-15T03:40:48.000Z">
-<meta property="article:modified_time" content="2023-11-21T09:17:38.018Z">
+<meta property="article:modified_time" content="2023-12-30T14:50:44.561Z">
 <meta property="article:author" content="Sparkle">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%BA%94%EF%BC%89/img1.png">
@@ -157,7 +157,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-count">19</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -221,7 +221,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2023-11-21 17:17:38" itemprop="dateModified" datetime="2023-11-21T17:17:38+08:00">2023-11-21</time>
+      <time title="Modified: 2023-12-30 22:50:44" itemprop="dateModified" datetime="2023-12-30T22:50:44+08:00">2023-12-30</time>
     </span>
 
   
@@ -541,7 +541,7 @@ p_mode_start:
 </li>
 <li><p>RW（Read&#x2F;Write）1表示可读可写，0表示可读不可写</p>
 </li>
-<li><p>P，（Present） 存在位，P&#x3D;0表示该表不在物理内存中</p>
+<li><p>P（Present） 存在位，P&#x3D;0表示该表不在物理内存中</p>
 </li>
 </ol>
 <h2 id="启用分页机制-1"><a href="#启用分页机制-1" class="headerlink" title="启用分页机制"></a>启用分页机制</h2><p>启用分页机制要做三件事：</p>
@@ -836,7 +836,7 @@ setup_page:
 <p> 第四条映射：虚地址高10位全为1、虚地址中10位处于一定范围内，就把PD[768]~PD[1022]当成自己的页表项目，最终指向物理地址0x101000及以上空间</p>
 <p> 总结出不变的规律：</p>
 <ul>
-<li>要获取页目录表物理地址：让虚伪高20位地址全为1，低12位全为0，即0xfffff000。这就是页目录自身的起始物理地址</li>
+<li>要获取页目录表物理地址：让虚位高20位地址全为1，低12位全为0，即0xfffff000。这就是页目录自身的起始物理地址</li>
 <li>要访问页目录中的页目录项，即获取页表物理地址：使虚拟地址为0xfffffxxx,其中xxx是页目录项的索引*4</li>
 <li>访问页表中的页表项:虚拟地址公式为 0x3ff&lt;&lt;22+中间10位&lt;&lt;12+低12位（中间10位是页表的索引，低12位为页表内的偏移地址）</li>
 </ul>
@@ -1482,7 +1482,7 @@ setup_page:
 
   <div class="copyright">
     &copy; 
-    <span itemprop="copyrightYear">2023</span>
+    <span itemprop="copyrightYear">2024</span>
     <span class="with-love">
       <i class="fa fa-heart"></i>
     </span>

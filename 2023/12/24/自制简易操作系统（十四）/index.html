@@ -19,15 +19,15 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
 
-    <meta name="description" content="graph LR    A[开始] –&gt; B[扫描空闲分区表]    B –&gt; C{是否有满足要求的空闲分区}    C – 是 –&gt; D[按照空闲分区大小升序排序]    D –&gt; E[选择第一个空闲分区]    E –&gt; F{是否与作业大小相等}    F – 是 –&gt; G[分配该空闲分区给作业]    G –&gt; H[结束]    F – 否 –&amp;gt">
+    <meta name="description" content="文件系统文件系统的核心是管理 超级块用于描述管理信息（大小一共512字节，一扇区也是一块） &#x2F;* 超级块 *&#x2F; struct super_block &amp;#123;     uint32_t magic;		    &#x2F;&#x2F; 用来标识文件系统类型,支持多文件系统的操作系统通过此标志来识别文件系统类型      &#x2F;&#x2F;描述总分区信息     uint32_t sec_cnt;		    &#x2F;&#x2F; 本分区总共的扇">
 <meta property="og:type" content="article">
 <meta property="og:title" content="自制简易操作系统（十四）">
 <meta property="og:url" content="http://example.com/2023/12/24/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%E5%9B%9B%EF%BC%89/index.html">
 <meta property="og:site_name" content="Sparkle&#39;s Space">
-<meta property="og:description" content="graph LR    A[开始] –&gt; B[扫描空闲分区表]    B –&gt; C{是否有满足要求的空闲分区}    C – 是 –&gt; D[按照空闲分区大小升序排序]    D –&gt; E[选择第一个空闲分区]    E –&gt; F{是否与作业大小相等}    F – 是 –&gt; G[分配该空闲分区给作业]    G –&gt; H[结束]    F – 否 –&amp;gt">
+<meta property="og:description" content="文件系统文件系统的核心是管理 超级块用于描述管理信息（大小一共512字节，一扇区也是一块） &#x2F;* 超级块 *&#x2F; struct super_block &amp;#123;     uint32_t magic;		    &#x2F;&#x2F; 用来标识文件系统类型,支持多文件系统的操作系统通过此标志来识别文件系统类型      &#x2F;&#x2F;描述总分区信息     uint32_t sec_cnt;		    &#x2F;&#x2F; 本分区总共的扇">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2023-12-23T17:15:47.000Z">
-<meta property="article:modified_time" content="2023-12-24T15:51:54.723Z">
+<meta property="article:modified_time" content="2023-12-30T03:57:11.939Z">
 <meta property="article:author" content="Sparkle">
 <meta name="twitter:card" content="summary">
 
@@ -119,7 +119,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-count">19</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -175,9 +175,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2023-12-24 01:15:47 / Modified: 23:51:54" itemprop="dateCreated datePublished" datetime="2023-12-24T01:15:47+08:00">2023-12-24</time>
+      <time title="Created: 2023-12-24 01:15:47" itemprop="dateCreated datePublished" datetime="2023-12-24T01:15:47+08:00">2023-12-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2023-12-30 11:57:11" itemprop="dateModified" datetime="2023-12-30T11:57:11+08:00">2023-12-30</time>
     </span>
 
   
@@ -189,9 +195,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>graph LR<br>    A[开始] –&gt; B[扫描空闲分区表]<br>    B –&gt; C{是否有满足要求的空闲分区}<br>    C – 是 –&gt; D[按照空闲分区大小升序排序]<br>    D –&gt; E[选择第一个空闲分区]<br>    E –&gt; F{是否与作业大小相等}<br>    F – 是 –&gt; G[分配该空闲分区给作业]<br>    G –&gt; H[结束]<br>    F – 否 –&gt; I[将该空闲分区分割为两部分]<br>    I –&gt; J[分配一部分给作业，另一部分仍为空闲]<br>    J –&gt; H<br>    C – 否 –&gt; K[分配失败，等待下次分配]<br>    K –&gt; H</p>
-<p>graph LR<br>    A[开始] –&gt; B[扫描内存分区表]<br>    B –&gt; C{是否找到对应的作业分区}<br>    C – 是 –&gt; D[回收该作业分区，置为空闲]<br>    D –&gt; E{是否与前后相邻的空闲分区合并}<br>    E – 是 –&gt; F[合并空闲分区]<br>    F –&gt; G[结束]<br>    E – 否 –&gt; G<br>    C – 否 –&gt; H[回收失败，作业不存在]<br>    H –&gt; G</p>
-<h1 id="文件系统"><a href="#文件系统" class="headerlink" title="文件系统"></a>文件系统</h1><p>文件系统的核心是管理</p>
+    <div class="post-body" itemprop="articleBody"><h1 id="文件系统"><a href="#文件系统" class="headerlink" title="文件系统"></a>文件系统</h1><p>文件系统的核心是管理</p>
 <h2 id="超级块"><a href="#超级块" class="headerlink" title="超级块"></a>超级块</h2><p>用于描述管理信息（大小一共512字节，一扇区也是一块）</p>
 <pre><code>/* 超级块 */
 struct super_block &#123;
@@ -261,6 +265,9 @@ struct inode &#123;
                 </a>
             </div>
             <div class="post-nav-item">
+                <a href="/2023/12/30/SimpleOS-1-%E7%AE%80%E4%BB%8B/" rel="next" title="SimpleOS-1-简介">
+                  SimpleOS-1-简介 <i class="fa fa-angle-right"></i>
+                </a>
             </div>
           </div>
     </footer>
@@ -280,7 +287,7 @@ struct inode &#123;
 
   <div class="copyright">
     &copy; 
-    <span itemprop="copyrightYear">2023</span>
+    <span itemprop="copyrightYear">2024</span>
     <span class="with-love">
       <i class="fa fa-heart"></i>
     </span>
