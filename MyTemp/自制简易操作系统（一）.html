@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="本系列记录我跟随《操作系统真象还原》制作一个简易的操作系统的全过程 安装VMwareVMware是一款可以帮你轻松建立并管理虚拟机的工具。操作系统真象还原推荐使用虚拟机管理工具virtualBox，但由于我之前使用过VMware所以选择继续使用VMware VMware的许可证密钥可以在网上轻松获得 具体的安装步骤请参照八分钟完成VMware和ubuntu系统安装的前半部分 安装UbuntuUbu">
+<meta property="og:type" content="website">
+<meta property="og:title" content="自制简易操作系统（一）">
+<meta property="og:url" content="http://example.com/MyTemp/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%80%EF%BC%89.html">
+<meta property="og:site_name" content="Sparkle&#39;s Space">
+<meta property="og:description" content="本系列记录我跟随《操作系统真象还原》制作一个简易的操作系统的全过程 安装VMwareVMware是一款可以帮你轻松建立并管理虚拟机的工具。操作系统真象还原推荐使用虚拟机管理工具virtualBox，但由于我之前使用过VMware所以选择继续使用VMware VMware的许可证密钥可以在网上轻松获得 具体的安装步骤请参照八分钟完成VMware和ubuntu系统安装的前半部分 安装UbuntuUbu">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2023-11-08T07:08:46.000Z">
+<meta property="article:modified_time" content="2023-11-09T09:30:22.480Z">
+<meta property="article:author" content="Sparkle">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/MyTemp/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%80%EF%BC%89">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"en","comments":true,"permalink":"http://example.com/MyTemp/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%80%EF%BC%89.html","path":"MyTemp/自制简易操作系统（一）.html","title":"自制简易操作系统（一）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>自制简易操作系统（一） | Sparkle's Space
+</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Sparkle's Space</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85VMware"><span class="nav-number">1.</span> <span class="nav-text">安装VMware</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85Ubuntu"><span class="nav-number">2.</span> <span class="nav-text">安装Ubuntu</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85VMware-Tool"><span class="nav-number">3.</span> <span class="nav-text">安装VMware Tool</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85Bochs"><span class="nav-number">4.</span> <span class="nav-text">安装Bochs</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%85%8D%E7%BD%AEBochs"><span class="nav-number">5.</span> <span class="nav-text">配置Bochs</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BB%93%E8%AF%AD"><span class="nav-number">6.</span> <span class="nav-text">结语</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Sparkle"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Sparkle</p>
+  <div class="site-description" itemprop="description">If there is no torchlight in the future, I will be the only light.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner page posts-expand">
+
+
+    
+    
+    
+    <div class="post-block" lang="en"><header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">自制简易操作系统（一）
+</h1>
+
+<div class="post-meta-container">
+</div>
+
+</header>
+
+      
+      
+      <div class="post-body">
+          <p>本系列记录我跟随<code>《操作系统真象还原》</code>制作一个简易的操作系统的全过程</p>
+<h1 id="安装VMware"><a href="#安装VMware" class="headerlink" title="安装VMware"></a>安装VMware</h1><p>VMware是一款可以帮你轻松建立并管理虚拟机的工具。<code>操作系统真象还原</code>推荐使用虚拟机管理工具virtualBox，但由于我之前使用过VMware所以选择继续使用VMware</p>
+<p>VMware的许可证密钥可以在网上轻松获得</p>
+<p>具体的安装步骤请参照<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1M94y1U7nc/?spm_id_from=333.1007.top_right_bar_window_history.content.click&vd_source=ed3f2c04c40cfc2a1c4f1c34717b21df">八分钟完成VMware和ubuntu系统安装</a>的前半部分</p>
+<h1 id="安装Ubuntu"><a href="#安装Ubuntu" class="headerlink" title="安装Ubuntu"></a>安装Ubuntu</h1><p>Ubuntu是以Linux为内核的操作系统，也是我们将来要自制简易操作系统的环境。<code>操作系统真象还原</code>推荐虚拟机安装Centos操作系统（二者都是Linux内核，听说Centos7会有些问题所以选择Ubuntu）</p>
+<p>其中我的虚拟机设置是：2*2核、40G硬盘、2G内存；Ubuntu版本是20.04.6（兼容gcc 4）</p>
+<p>具体的安装步骤请参照<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1M94y1U7nc/?spm_id_from=333.1007.top_right_bar_window_history.content.click&vd_source=ed3f2c04c40cfc2a1c4f1c34717b21df">八分钟完成VMware和ubuntu系统安装</a>的后半部分</p>
+<p><strong>PS：从安装完Ubuntu后应该在执行每一个重要的步骤前给虚拟机拍一个快照，如果执行出错了，我们就可以回到快照处，保证虚拟机的正确性</strong><br><strong>安装Ubuntu时Language选项请选择英语，可以省去很多后续麻烦</strong></p>
+<h1 id="安装VMware-Tool"><a href="#安装VMware-Tool" class="headerlink" title="安装VMware Tool"></a>安装VMware Tool</h1><p>VMware Tool可以实现主机和虚拟机之间拖拽传输文件以及通用复制粘贴，大大简化两机之间的交互难度</p>
+<p>具体安装步骤请参照该<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1YA411k7Lm/?spm_id_from=333.880.my_history.page.click&vd_source=ed3f2c04c40cfc2a1c4f1c34717b21df">VMwareTools安装教程</a></p>
+<p>如果在执行第二步Ubuntu时不是自定义安装而是简易安装，就有可能会遇到一个问题：ubuntu安装VMware-tools时，虚拟机中的选项是灰色的，点击不了。那么请参考<a target="_blank" rel="noopener" href="https://blog.csdn.net/zhvngchvng/article/details/108603053">ubuntu安装VMware-tools时，虚拟机中的选项是灰色的，点击不了</a></p>
+<p><strong>PS：有的虚拟机安装完操作系统就自带安装VMware Tool了，请安装完Ubuntu看看虚拟机菜单，如果选项是’重新安装BMware Tool’就代表已经按照完毕</strong></p>
+<h1 id="安装Bochs"><a href="#安装Bochs" class="headerlink" title="安装Bochs"></a>安装Bochs</h1><p>Bochs是一个x86硬件平台的开源模拟器，它可以模拟各种硬件的配置。Bochs模拟的是整个PC平台，包括I&#x2F;O设备、内存和BIOS，某种程度上来说Bochs也是一个虚拟机，我们未来就是要在Bochs上实现操作系统的制作。</p>
+<p>我安装的是Bochs2.6.8，Bochs的具体安装步骤请参考<a target="_blank" rel="noopener" href="https://love6.blog.csdn.net/article/details/117751327">《操作系统真象还原》第一章 —- 安装Vmware Station 安装Ubuntu 装载配置Bochs 安装Vmware tools 开始乘帆历险！</a>上半部分。</p>
+<p>Bochs的下载我们可以在主机上下载完压缩包后再直接复制到虚拟机里</p>
+<p>在解压后的文件夹下打开终端并输入命令</p>
+<pre><code>./configure \
+--prefix=/home/sparkle2/bochs \
+--enable-debugger \
+--enable-disasm \
+--enable-iodebug \
+--enable-x86-debugger \
+LIBS=&#39;-lX11&#39; \
+--with-x \
+--with-x11
+
+#上面的代码中，prefix指定的是安装bochs的路径
+#LIBS这一行是原书上没有的，是我遇到第四个报错后查阅资料添加的
+#除了最后一句命令外每一句结尾都是&#39; \&#39;代表着命令还未输入完，运行换行继续输入
+</code></pre>
+<p>等到上述命令得以正确执行后，还需要在Bochs的解压目录下执行两条命令：</p>
+<pre><code>make
+make install
+</code></pre>
+<p>Bochs就安装成功了，我们可以在指定路径下看到安装后的bochs文件夹</p>
+<p>整个安装过程中我遇到了四个报错</p>
+<ol>
+<li>缺少C编译器</li>
+<li>C++ preprocessor fails sanity check</li>
+<li>“ERROR: X windows gui was selected, but X windows libraries were not found.</li>
+<li>undefined reference to symbol ‘XSetForeground’</li>
+</ol>
+<p>其中前两个报错在上述文章中都已解决，第三个报错请参照<a target="_blank" rel="noopener" href="https://blog.csdn.net/geeker_12/article/details/11409009">Ubuntu下安装Bochs各种奇怪错误汇总</a>，第四个报错请参考文章<a target="_blank" rel="noopener" href="https://blog.csdn.net/cloudblaze/article/details/52752912">[乱七八糟]bochs编译错误之’XSetForeground’</a></p>
+<p><strong>PS:在使用apt命令更新或下载一些东西时，有时候需要换源，在etc&#x2F;apt&#x2F;source.list文件中把下载源改为中国地区,否则会出现下载慢下载失败等问题</strong></p>
+<h1 id="配置Bochs"><a href="#配置Bochs" class="headerlink" title="配置Bochs"></a>配置Bochs</h1><p>配置Bochs请参照<a target="_blank" rel="noopener" href="https://love6.blog.csdn.net/article/details/117751327">《操作系统真象还原》第一章 —- 安装Vmware Station 安装Ubuntu 装载配置Bochs 安装Vmware tools 开始乘帆历险！</a>下半部分</p>
+<p>我的配置文件如下：</p>
+<pre><code>megs: 32
+# megs书本是32，博客是512，我跟着书本走
+
+romimage: file=/home/sparkle2/bochs/share/bochs/BIOS-bochs-latest
+vgaromimage: file=/home/sparkle2/bochs/share/bochs/VGABIOS-lgpl-latest
+
+boot: disk
+
+log: bochs.out
+
+mouse:enabled=0
+keyboard:keymap=/home/sparkle2/bochs/share/bochs/keymaps/x11-pc-us.map
+
+ata0:enabled=1,ioaddr1=0x1f0,ioaddr2=0x3f0,irq=14
+
+ata0-master: type=disk, path=&quot;hd60M.img&quot;, mode=flat,cylinders=121,heads=16,spt=63
+#新加入的代码，也就是新建立的虚拟磁盘
+
+# gdbstub:enabled=1,port=1234,text_base=0,data_base=0,bss_base=0
+</code></pre>
+<h1 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h1><p>到此，第一步环境的部署就做完了，第二步就可以开始正式写代码了。</p>
+<p>只是环境部署就用了将近两天时间，期间反复下载了4次虚拟机，长路漫漫。</p>
+
+      </div>
+      
+      
+      
+    </div>
+
+    
+    
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Sparkle</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="进程和线程 进程和线程的区别：   线程程是具有能动性、执行力、独立的代码块；进程就是线程的集合+资源。   每个进程都有自己独立的内存空间，线程没有自己独立的内存空间，一个进程里的所有线程共享该进程内所有内存空间   线程才是最基本的调度单位（进程的调度比线程更高一级），也可以称为是执行流  进程和线程的状态图      PS：图中写的是进程的状态图，但我们知道线程才是最基本的调度单位，所以我认">
+<meta property="og:type" content="website">
+<meta property="og:title" content="自制简易操作系统（九）">
+<meta property="og:url" content="http://example.com/MyTemp/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89.html">
+<meta property="og:site_name" content="Sparkle&#39;s Space">
+<meta property="og:description" content="进程和线程 进程和线程的区别：   线程程是具有能动性、执行力、独立的代码块；进程就是线程的集合+资源。   每个进程都有自己独立的内存空间，线程没有自己独立的内存空间，一个进程里的所有线程共享该进程内所有内存空间   线程才是最基本的调度单位（进程的调度比线程更高一级），也可以称为是执行流  进程和线程的状态图      PS：图中写的是进程的状态图，但我们知道线程才是最基本的调度单位，所以我认">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img1.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img2.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img3.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img4.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img5.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img6.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img7.png">
+<meta property="article:published_time" content="2023-11-29T03:02:44.000Z">
+<meta property="article:modified_time" content="2023-11-30T03:45:32.845Z">
+<meta property="article:author" content="Sparkle">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img1.png">
+
+
+<link rel="canonical" href="http://example.com/MyTemp/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"en","comments":true,"permalink":"http://example.com/MyTemp/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89.html","path":"MyTemp/自制简易操作系统（九）.html","title":"自制简易操作系统（九）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>自制简易操作系统（九） | Sparkle's Space
+</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Sparkle's Space</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E5%92%8C%E7%BA%BF%E7%A8%8B"><span class="nav-number">1.</span> <span class="nav-text">进程和线程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9C%A8%E5%86%85%E6%A0%B8%E7%A9%BA%E9%97%B4%E5%AE%9E%E7%8E%B0%E7%BA%BF%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">在内核空间实现线程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%A4%9A%E7%BA%BF%E7%A8%8B%E8%B0%83%E5%BA%A6"><span class="nav-number">3.</span> <span class="nav-text">多线程调度</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Sparkle"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Sparkle</p>
+  <div class="site-description" itemprop="description">If there is no torchlight in the future, I will be the only light.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner page posts-expand">
+
+
+    
+    
+    
+    <div class="post-block" lang="en"><header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">自制简易操作系统（九）
+</h1>
+
+<div class="post-meta-container">
+</div>
+
+</header>
+
+      
+      
+      <div class="post-body">
+          <h1 id="进程和线程"><a href="#进程和线程" class="headerlink" title="进程和线程"></a>进程和线程</h1><ul>
+<li><p>进程和线程的区别：</p>
+<p>  线程程是具有能动性、执行力、独立的代码块；进程就是线程的集合+资源。</p>
+<p>  每个进程都有自己独立的内存空间，线程没有自己独立的内存空间，一个进程里的所有线程共享该进程内所有内存空间</p>
+<p>  线程才是最基本的调度单位（进程的调度比线程更高一级），也可以称为是执行流</p>
+</li>
+<li><p>进程和线程的状态图</p>
+<p>  <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img1.png" alt="img"></p>
+<p>  <strong>PS：图中写的是进程的状态图，但我们知道线程才是最基本的调度单位，所以我认为这也代表线程的状态图</strong></p>
+</li>
+<li><p>进程的身份证————PCB</p>
+<p>  <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img2.png" alt="img"></p>
+<p>  左图是PCB的结构，右图是进程表（也就是PCB的集合）。PCB让我们了解一个进程的各个状态，并给出了上下文环境（PCB的结构并非是固定的，取决于程操作系统的复杂程度，一般一个PCB的大小相当于一个自然页4KB）。进程表将PCB集合存放在一个位置，这样操作系统就会在一个统一的地方查询PCB方便调度</p>
+</li>
+<li><p>实现线程的两种方式————内核或用户进程</p>
+<p>  <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img3.png" alt="img"></p>
+<p>  用户进程的意思是，操作系统不支持线程调度（操作系统根本不知道这回事），由用户程序自己实现线程调度（线程表在用户空间）。</p>
+<p>  内核进程则是操作系统本身就支持线程调度，由操作系统来负责所有进程以及线程的调用（线程表放在内核）</p>
+<p>  可以说内核进程才是真正发挥出了线程的作用，我们要实现的也是内核进程</p>
+</li>
+</ul>
+<h1 id="在内核空间实现线程"><a href="#在内核空间实现线程" class="headerlink" title="在内核空间实现线程"></a>在内核空间实现线程</h1><p>在内核实现线程的关键是PCB的构建，我们引入了三个新的结构体来构建PCB：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img4.png" alt="img"></p>
+<p>我们打算构建的PCB结构如下图所示：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img5.png" alt="img"></p>
+<p>函数thread_start实现创建并运行一个线程，函数之间的逻辑关系如下图所示：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img6.png" alt="img"></p>
+<p>代码如下：</p>
+<ul>
+<li><p>thread&#x2F;thread.h</p>
+<pre><code>  #ifndef __THREAD_THREAD_H__
+  #define __THREAD_THREAD_H__
+
+  #include &quot;stdint.h&quot;
+
+  //注意：这是定义一个函数类型 thread_func ,而不是一个函数指针类型
+  //定义函数指针类型格式是：typedef void (*thread_func)(void*);
+  typedef void thread_func(void*);
+
+  enum task_status&#123;
+      TASK_RUNNING,
+      TASK_READY,
+      TASK_BLOCKED,
+      TASK_WAITING,
+      TASK_HANGING,
+      TASK_DIED,
+  &#125;;
+
+  //中断栈定义，用于线程中断时保护上下文环境
+  struct intr_stack&#123;
+      uint32_t vec_no;
+      uint32_t edi;
+      uint32_t esi;
+      uint32_t ebp;
+      uint32_t esp_dummy;
+
+      uint32_t ebx;
+      uint32_t edx;
+      uint32_t ecx;
+      uint32_t eax;
+
+      uint32_t gs;
+      uint32_t fs;
+      uint32_t es;
+      uint32_t ds;
+
+      //CPU由低特权级进入高特权级时压入
+      uint32_t err_code;
+
+      //定义了一个函数指针
+      void* (*eip)(void);
+      uint32_t cs;
+      uint32_t eflags;
+      void* esp;
+      uint32_t ss;
+  &#125;;
+
+
+  //线程栈
+  //1、第一次运行时，eip用于存储线程中待执行的函数
+  //2、在switch_to（任务切换）时，eip用于保存新任务的返回地址 
+  struct thread_stack&#123;
+
+      //ABI规定被调用函数不允许破坏ebp、ebx、edi、esi、esp，所以我们要将他们保护好（esp由调用约定保护）
+      //但其实我也不知道这边的真实用途？？？
+      uint32_t ebp;
+      uint32_t ebx;
+      uint32_t edi;
+      uint32_t esi;
+
+      void (*eip)(thread_func* func,void* func_arg);//指向线程待执行函数
+      
+      void (*unused_retaddr); //占位符，原本该地方放置的应该是线程待执行函数的返回地址
+      thread_func* function;  //function是指向thread_func类型函数的指针
+      void* func_arg;
+
+  &#125;;
+
+
+  //PCB结构
+  struct task_struct&#123;
+      uint32_t* self_kstack; //PCB结构中包含了线程的内核栈，该成员变量相当于栈顶指针
+      enum task_status status;
+      uint8_t priority;
+      char name[16];
+      uint32_t stack_magic; 
+  &#125;;
+
+
+  void thread_create(struct task_struct* pthread, thread_func function,void* func_arg);
+  void init_thread(struct task_struct* pthread,char* name,int prio);
+  struct task_struct* thread_start(char* name,int prio,thread_func function,void* func_arg);
+
+  #endif
+</code></pre>
+</li>
+<li><p>thread&#x2F;thread.c</p>
+<pre><code>  #include &quot;thread.h&quot;
+  #include &quot;stdint.h&quot;
+  #include &quot;string.h&quot;
+  #include &quot;global.h&quot;
+  #include &quot;memory.h&quot;
+
+  #define PG_SIZE 4096
+
+
+  //由kernel_thread去执行function(func_arg)
+  static void kernel_thread(thread_func* function,void* func_arg)&#123;
+      function(func_arg);
+  &#125;
+
+  //初始化线程栈
+  void thread_create(struct task_struct* pthread, thread_func function,void* func_arg)&#123;
+      //预留中断栈空间和线程栈空间
+
+      pthread-&gt;self_kstack -= sizeof(struct intr_stack);
+      pthread-&gt;self_kstack -= sizeof(struct thread_stack);
+      
+      struct thread_stack* kthread_stack=(struct thread_stack*)pthread-&gt;self_kstack;
+
+      kthread_stack-&gt;eip=kernel_thread;
+      kthread_stack-&gt;function=function;
+      kthread_stack-&gt;func_arg=func_arg;
+      kthread_stack-&gt;ebp=kthread_stack-&gt;ebx=kthread_stack-&gt;esi=kthread_stack-&gt;edi=0;
+
+  &#125;
+
+
+  //初始化PCB
+  void init_thread(struct task_struct* pthread,char* name,int prio)&#123;
+      memset(pthread,0,sizeof(*pthread));
+      strcpy(pthread-&gt;name,name);
+      pthread-&gt;status=TASK_RUNNING;
+      pthread-&gt;priority=prio;
+      pthread-&gt;self_kstack=(uint32_t*)((uint32_t)pthread+PG_SIZE);
+      pthread-&gt;stack_magic=0x19666666; //自定义的魔数
+
+  &#125;
+
+  //创建一个优先级为prio的线程，线程名为name，线程所执行的函数是function(func_arg)
+  struct task_struct* thread_start(char* name,int prio,thread_func function,void* func_arg)&#123;
+      struct task_struct* thread=get_kernel_pages(1);
+      init_thread(thread,name,prio);
+      thread_create(thread,function,func_arg);
+
+      asm volatile(&quot;movl %0,%%esp; pop %%ebp; pop %%ebx; pop %%edi; pop %%esi; ret&quot;::&quot;g&quot;(thread-&gt;self_kstack):&quot;memory&quot;);
+
+      return thread;
+  &#125;
+</code></pre>
+</li>
+<li><p>kernel&#x2F;main.c</p>
+<pre><code>  #include &quot;print.h&quot;
+  #include &quot;init.h&quot;
+  #include &quot;debug.h&quot;
+  #include &quot;memory.h&quot;
+  #include &quot;thread.h&quot;
+
+  void k_thread_a(void* arg);
+
+  int main(void) &#123;
+  put_str(&quot;I am kernel\n&quot;);
+  init_all();
+
+
+  thread_start(&quot;k_thread_a&quot;,31,k_thread_a,&quot;argA &quot;);
+
+
+  while(1);
+  return 0;
+  &#125;
+
+
+  //在线程中运行的函数
+  void k_thread_a(void* arg)&#123;
+  //被调用的函数知道自己需要什么类型的参数，自己转换再用
+  char* para=arg;
+
+  while(1)&#123;
+      put_str(para);
+  &#125;
+  &#125;
+</code></pre>
+</li>
+</ul>
+<h1 id="多线程调度"><a href="#多线程调度" class="headerlink" title="多线程调度"></a>多线程调度</h1><p>要实现多线程调度，我们的PCB就不能像之前那么简单了，之间的PCB只是一个简单的示范。我们现在要给PCB增加一些新的成员，相应的一些线程相关函数也要有对应的更改。</p>
+<p>想要实现多线程调度的关键是维护两个队列，一个是进程就绪队列，还有一个是所有进程队列(包括被阻塞的进程)。而如果我们把整个PCB作为链表的节点来说实在是太麻烦了，不够灵活（整个链表的遍历负担也大）。所以我们需要一个轻量级的链表。</p>
+<p>我们在PCB中引入新的成员：<code>struct list_elem general_tag;  //存放在一般队列中的节点</code> 和<code>struct list_elem all_list_tag; //存在在所有线程队列的节点</code>，这样的节点元素只有前指针和后指针两个元素8字节大小，维护两个这样的tag链表代替PCB链表。当然我们必须能够实现对应tag和PCB指针之间的相互转换才能真正实现该队列。        </p>
+<p>新的PCB结构如以下代码：</p>
+<ul>
+<li><p>thread&#x2F;thread.h(部分代码)</p>
+<pre><code>  //PCB结构
+  struct task_struct&#123;
+      uint32_t* self_kstack; //PCB结构中包含了线程的内核栈，该成员变量相当于栈顶指针
+      enum task_status status;
+      char name[16];
+      uint8_t priority; //把优先级设置位一次执行时间片的长短，优先级越高则一次时间片越长
+      uint8_t ticks;   //时间片，记录再执行几次时钟中断就将它换下
+      uint32_t elapsed_ticks;  //该线程在CPU执行的总时钟中断数
+      struct list_elem general_tag;  //存放在一般队列中的节点
+      struct list_elem all_list_tag; //存在在所有线程队列的节点
+      uint32_t* pgdir;         //进程自己页表的虚拟地址（线程没有自己的页表则该值为0）
+      uint32_t stack_magic;   //该数字位于PCB结构的最高位，也就是说一旦PCB的栈顶冲破了PCB信息结构，
+                              //stack_magic会最先被破坏，因此用该位判断PCB的内核栈是否越界
+  &#125;;
+</code></pre>
+</li>
+<li><p>修改后的thread&#x2F;thread.c代码</p>
+<pre><code>  #include &quot;thread.h&quot;
+  #include &quot;stdint.h&quot;
+  #include &quot;string.h&quot;
+  #include &quot;global.h&quot;
+  #include &quot;memory.h&quot;
+  #include &quot;interrupt.h&quot;
+
+  #define PG_SIZE 4096
+
+
+  struct task_struct* main_thread;  //主线程PCB
+  struct list thread_ready_list;     //就绪队列
+  struct list thread_all_list;      //所有线程队列
+  static struct list_elem* thread_tag;  //用于 tag转化为PCB指针 时的中介
+
+  extern void switch_to(struct task_struct* cur,struct task_struct* next);
+
+
+  //返回当前线程的PCB指针
+  //当前esp存取的是当前线程的栈顶指针，而线程的栈全在PCB中，所以取当前栈顶指针的前20位即是PCB其实地址
+  struct task_struct* running_thread()&#123;
+      uint32_t esp;
+      asm (&quot;mov %%esp,%0&quot;:&quot;=g&quot;(esp));
+      return (struct task_struct*)(esp &amp; 0xfffff000);
+  &#125;
+
+  //由kernel_thread去执行function(func_arg)
+  static void kernel_thread(thread_func* function,void* func_arg)&#123;
+      intr_enable();//开启中断，避免线程独占CPU
+      function(func_arg);
+  &#125;
+
+  //初始化线程栈
+  void thread_create(struct task_struct* pthread, thread_func function,void* func_arg)&#123;
+      //预留中断栈空间和线程栈空间
+
+      pthread-&gt;self_kstack -= sizeof(struct intr_stack);
+      pthread-&gt;self_kstack -= sizeof(struct thread_stack);
+      
+      struct thread_stack* kthread_stack=(struct thread_stack*)pthread-&gt;self_kstack;
+
+      kthread_stack-&gt;eip=kernel_thread;
+      kthread_stack-&gt;function=function;
+      kthread_stack-&gt;func_arg=func_arg;
+      kthread_stack-&gt;ebp=kthread_stack-&gt;ebx=kthread_stack-&gt;esi=kthread_stack-&gt;edi=0;
+
+  &#125;
+
+
+  //初始化PCB
+  void init_thread(struct task_struct* pthread,char* name,int prio)&#123;
+      memset(pthread,0,sizeof(*pthread));
+      strcpy(pthread-&gt;name,name);
+
+      if(pthread==main_thread)&#123;
+          pthread-&gt;status=TASK_RUNNING;
+      &#125;else&#123;
+          pthread-&gt;status=TASK_READY;
+      &#125;
+      
+      pthread-&gt;self_kstack=(uint32_t*)((uint32_t)pthread+PG_SIZE);
+      pthread-&gt;priority=prio;
+      pthread-&gt;ticks=prio;
+      pthread-&gt;elapsed_ticks=0;
+      pthread-&gt;pgdir=NULL;//线程没有自己的地址空间
+      pthread-&gt;stack_magic=0x19870916; //自定义的魔数，这个值一旦被不一样了，就证明栈顶越界了
+
+  &#125;
+
+  //创建一个优先级为prio的线程，线程名为name，线程所执行的函数是function(func_arg)
+  struct task_struct* thread_start(char* name,int prio,thread_func function,void* func_arg)&#123;
+      struct task_struct* thread=get_kernel_pages(1);
+      init_thread(thread,name,prio);
+      thread_create(thread,function,func_arg);
+
+
+      //确保线程之前不在队列里
+      ASSERT(!elem_find(&amp;thread_ready_list,&amp;thread-&gt;general_tag));     
+      list_append(&amp;thread_ready_list,&amp;thread-&gt;general_tag);
+      
+      ASSERT(!elem_find(&amp;thread_all_list,&amp;thread-&gt;all_list_tag));
+      list_append(&amp;thread_all_list,&amp;thread-&gt;all_list_tag);
+
+
+      return thread;
+  &#125;
+
+
+  //完善kernel中的main的主线程
+  //我怎么确定主线程在0xc009e00？？？
+  static void make_main_thread(void)&#123;
+      main_thread=running_thread();
+
+      init_thread(main_thread,&quot;main&quot;,31);
+
+      ASSERT(!elem_find(&amp;thread_all_list,&amp;main_thread-&gt;all_list_tag));
+      list_append(&amp;thread_all_list,&amp;main_thread-&gt;all_list_tag);
+  &#125;
+</code></pre>
+</li>
+</ul>
+<p>接下来我们要实现一些新的函数，借助新函数来完成进程调度和上下文切换，新函数之间的逻辑关系如下：</p>
+<p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B9%9D%EF%BC%89/img7.png" alt="img"></p>
+<p>代码如下：</p>
+<ul>
+<li><p>kernel&#x2F;interrupt.c </p>
+<pre><code>  //为专门的中断号注册专门的中断函数
+  void register_handler(uint8_t vector_no,intr_handler function)&#123;
+      idt_table[vector_no]=function;
+  &#125;
+</code></pre>
+</li>
+<li><p>device&#x2F;timer.c</p>
+<pre><code>  static void intr_timer_handler(void)&#123;
+      struct task_struct* cur_thread =running_thread();
+
+      //检测栈是否溢出
+      ASSERT(cur_thread-&gt;stack_magic==0x19870916);
+
+
+      cur_thread-&gt;elapsed_ticks++;
+      ticks++;
+
+      if(cur_thread-&gt;ticks == 0)&#123;
+          schedule();
+      &#125;else&#123;
+          cur_thread-&gt;ticks--;
+      &#125;
+
+  &#125;
+</code></pre>
+<p>  <strong>PS:记得在时钟初始化上调用注册函数注册时钟中断的专门处理函数</strong></p>
+</li>
+<li><p>thread&#x2F;switch.S</p>
+<pre><code>  [bits 32]
+  section .text
+  global switch_to
+  switch_to:
+      ;此处是返回地址
+      push esi
+      push edi
+      push ebx
+      push ebp
+
+      mov eax,[esp+20]    ;得到栈中参数cur
+      mov [eax],esp       ;保存栈顶指针esp到self_kstack;
+
+  ;-------------以上是备份环境，下面是恢复下一个线程的环境------------
+
+      mov eax,[esp+24]    ;得到栈中参数next
+      mov esp,[eax]       ;pcb的第一个成员是self_kstack
+
+      pop ebp
+      pop ebx
+      pop edi
+      pop esi
+      
+      ret   
+</code></pre>
+</li>
+<li><p>thread&#x2F;thread.c    </p>
+<pre><code>  void schedule()&#123;
+      ASSERT(intr_get_status()==INTR_OFF);
+
+      struct task_struct* cur =running_thread();
+      if(cur-&gt;status==TASK_RUNNING)&#123;
+          //时间片时间到了,将cpu上的线程重置时间片后放回就绪队列尾部
+          ASSERT(!elem_find(&amp;thread_ready_list,&amp;cur-&gt;general_tag));
+          list_append(&amp;thread_ready_list,&amp;cur-&gt;general_tag);
+          cur-&gt;ticks=cur-&gt;priority;
+          cur-&gt;status=TASK_READY;
+      &#125;else&#123;
+          //如果是被阻塞的话，就不同特殊处理
+          //因为被阻塞线程本身就不在就绪队列中
+          //只需要调度新的线程进来就行了
+      &#125;
+
+      ASSERT(!list_empty(&amp;thread_ready_list));
+      
+      //将thread_ready_list队列中第一个就绪栈弹出，准备将其调度上CPU
+      thread_tag=NULL;
+      thread_tag=list_pop(&amp;thread_ready_list);
+      struct task_struct* next=elem2entry(struct task_struct,general_tag,thread_tag);
+      next-&gt;status=TASK_RUNNING;
+      switch_to(cur,next);
+  &#125;
+</code></pre>
+</li>
+<li><p>kernel&#x2F;main.c</p>
+<pre><code>  #include &quot;print.h&quot;
+  #include &quot;init.h&quot;
+  #include &quot;debug.h&quot;
+  #include &quot;memory.h&quot;
+  #include &quot;thread.h&quot;
+
+  void k_thread_a(void*);
+  void k_thread_b(void*);
+
+  int main(void) &#123;
+  put_str(&quot;I am kernel\n&quot;);
+  init_all();
+
+
+  thread_start(&quot;k_thread_a&quot;,31,k_thread_a,&quot;argA &quot;);
+  thread_start(&quot;k_thread_b&quot;,8,k_thread_b,&quot;argB &quot;);
+
+  intr_enable();
+  while(1)&#123;
+      put_str(&quot;Main &quot;);
+  &#125;;
+  
+  return 0;
+  &#125;
+
+
+  //在线程中运行的函数
+  void k_thread_a(void* arg)&#123;
+  //被调用的函数知道自己需要什么类型的参数，自己转换再用
+  char* para=arg;
+
+  while(1)&#123;
+      put_str(para);
+  &#125;
+  &#125;
+
+  void k_thread_b(void* arg)&#123;
+  //被调用的函数知道自己需要什么类型的参数，自己转换再用
+  char* para=arg;
+
+  while(1)&#123;
+      put_str(para);
+  &#125;
+  &#125;
+</code></pre>
+</li>
+<li><p>makefile</p>
+<pre><code>  BUILD_DIR = ./build
+  ENTRY_POINT = 0xc0001500
+  AS = nasm
+  CC = gcc
+  LD = ld
+  LIB = -I lib/ -I lib/kernel/ -I lib/user/ -I kernel/ -I device/ -I thread/ 
+  ASFLAGS = -f elf
+
+  CFLAGS = -Wall -m32 -fno-stack-protector $(LIB) -c -fno-builtin -W -Wstrict-prototypes -Wmissing-prototypes
+  # -fno-stack-protector 闭栈保护的编译选项，栈保护作用是禁止编译器在函数的栈帧中插入栈保护符号，以防止栈溢出攻击。
+  # -fno-builtin 告诉编译器不要采用内部函数，因为我们以后会自定义与内部函数同名的函数
+  # -Wall 启动所有警告
+  # -W 启动常见警告
+  # -Wstrict-prototypes  要求函数声明中必须有参数类型，否则警告
+  # -Wmissing-prototypes 要求函数必须声明，否则警告
+
+  LDFLAGS =  -m elf_i386 -Ttext $(ENTRY_POINT) -e main -Map $(BUILD_DIR)/kernel.map
+  # -Map $(BUILD_DIR)/kernel.map  输出文件build/kernel.map。用于记录kernel符号地址
+
+  OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
+      $(BUILD_DIR)/timer.o $(BUILD_DIR)/kernel.o $(BUILD_DIR)/print.o \
+      $(BUILD_DIR)/debug.o $(BUILD_DIR)/string.o $(BUILD_DIR)/memory.o \
+      $(BUILD_DIR)/bitmap.o $(BUILD_DIR)/thread.o $(BUILD_DIR)/list.o \
+      $(BUILD_DIR)/switch.o
+  # 定义目标文件名集合，用于ld时依赖文件项
+
+
+  ##############     c代码编译     			###############
+  $(BUILD_DIR)/main.o: kernel/main.c lib/kernel/print.h \
+          lib/stdint.h kernel/init.h lib/string.h kernel/memory.h \
+          thread/thread.h kernel/interrupt.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/init.o: kernel/init.c kernel/init.h lib/kernel/print.h \
+          lib/stdint.h kernel/interrupt.h device/timer.h kernel/memory.h \
+          thread/thread.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/interrupt.o: kernel/interrupt.c kernel/interrupt.h \
+          lib/stdint.h kernel/global.h lib/kernel/io.h lib/kernel/print.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/timer.o: device/timer.c device/timer.h lib/kernel/io.h lib/kernel/print.h \
+          kernel/interrupt.h thread/thread.h kernel/debug.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/debug.o: kernel/debug.c kernel/debug.h \
+          lib/kernel/print.h lib/stdint.h kernel/interrupt.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/string.o: lib/string.c lib/string.h \
+          kernel/debug.h kernel/global.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+      
+  $(BUILD_DIR)/memory.o: kernel/memory.c kernel/memory.h \
+          lib/stdint.h lib/kernel/bitmap.h kernel/debug.h lib/string.h \
+          lib/kernel/print.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+      
+  $(BUILD_DIR)/bitmap.o: lib/kernel/bitmap.c lib/kernel/bitmap.h \
+          lib/string.h kernel/interrupt.h lib/kernel/print.h kernel/debug.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/thread.o: thread/thread.c thread/thread.h \
+          lib/stdint.h lib/string.h kernel/global.h kernel/memory.h \
+          kernel/debug.h kernel/interrupt.h lib/kernel/print.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/list.o: lib/kernel/list.c lib/kernel/list.h \
+          kernel/interrupt.h lib/stdint.h kernel/debug.h
+      $(CC) $(CFLAGS) $&lt; -o $@
+
+  ##############     c代码编译     			###############
+
+
+  ##############    汇编代码编译    ###############
+  $(BUILD_DIR)/kernel.o: kernel/kernel.S
+      $(AS) $(ASFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/print.o: lib/kernel/print.S
+      $(AS) $(ASFLAGS) $&lt; -o $@
+
+  $(BUILD_DIR)/switch.o: thread/switch.S
+      $(AS) $(ASFLAGS) $&lt; -o $@
+  ##############    汇编代码编译    ###############
+
+
+  ##############    链接所有目标文件    #############
+  $(BUILD_DIR)/kernel.bin: $(OBJS)
+      $(LD) $(LDFLAGS) $^ -o $@
+  ##############    链接所有目标文件    #############
+
+
+  ################  伪目标 ###############################
+  .PHONY : mk_dir hd clean build all
+
+  mk_dir:
+      if [ ! -d $(BUILD_DIR) ]; then mkdir $(BUILD_DIR); fi
+
+  hd:
+      dd if=$(BUILD_DIR)/kernel.bin \
+          of=/home/sparkle2/bochs/hd60M.img \
+          bs=512 count=200 seek=9 conv=notrunc
+
+  clean:
+      cd $(BUILD_DIR) &amp;&amp; rm -f  ./*
+
+  build: $(BUILD_DIR)/kernel.bin
+
+  all: mk_dir build hd
+  ################  伪目标 ###############################
+</code></pre>
+</li>
+</ul>
+<p>一定要从main函数开始，跟着流程走一遍，才能真正理解线程之间的压栈出栈和跳转。</p>
+<p><strong>注意！PCB结构中的intr_stack和thread_stack只是规定了入栈出栈的顺序，二者的位置则是不固定的，并不是说二者的位置就一定固定在栈顶</strong></p>
+
+      </div>
+      
+      
+      
+    </div>
+
+    
+    
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Sparkle</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

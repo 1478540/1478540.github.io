@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="我们将在上一章节的基础上完善MBR,学会使用IO接口的两种方法 相应的本章一共要完成两个实验：一个是MBR使用显存和显卡沟通，另一个是MBR通过端口将磁盘上的loader程序加载到内存相应位置 地址、section和vstart 地址  地址只是数字，描述各种符号在源程序中的位置，它是源代码文件中符号偏移文件开头的位置。编译器的工作就是给代码里的各符号编址。  下图给出了一个程序的 源码、地址、反">
+<meta property="og:type" content="website">
+<meta property="og:title" content="自制简易操作系统（三）">
+<meta property="og:url" content="http://example.com/MyTemp/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89.html">
+<meta property="og:site_name" content="Sparkle&#39;s Space">
+<meta property="og:description" content="我们将在上一章节的基础上完善MBR,学会使用IO接口的两种方法 相应的本章一共要完成两个实验：一个是MBR使用显存和显卡沟通，另一个是MBR通过端口将磁盘上的loader程序加载到内存相应位置 地址、section和vstart 地址  地址只是数字，描述各种符号在源程序中的位置，它是源代码文件中符号偏移文件开头的位置。编译器的工作就是给代码里的各符号编址。  下图给出了一个程序的 源码、地址、反">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img1.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img2.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img3.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img4.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img5.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img6.png">
+<meta property="og:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img7.png">
+<meta property="article:published_time" content="2023-11-10T05:28:18.000Z">
+<meta property="article:modified_time" content="2023-11-11T09:02:44.296Z">
+<meta property="article:author" content="Sparkle">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img1.png">
+
+
+<link rel="canonical" href="http://example.com/MyTemp/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"en","comments":true,"permalink":"http://example.com/MyTemp/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89.html","path":"MyTemp/自制简易操作系统（三）.html","title":"自制简易操作系统（三）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>自制简易操作系统（三） | Sparkle's Space
+</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Sparkle's Space</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9C%B0%E5%9D%80%E3%80%81section%E5%92%8Cvstart"><span class="nav-number">1.</span> <span class="nav-text">地址、section和vstart</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CPU%E7%9A%84%E5%AE%9E%E6%A8%A1%E5%BC%8F"><span class="nav-number">2.</span> <span class="nav-text">CPU的实模式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%94%B9%E8%BF%9BMBR%EF%BC%9A%E9%80%9A%E8%BF%87%E6%98%BE%E5%AD%98%E4%B8%8E%E6%98%BE%E5%8D%A1%E6%B2%9F%E9%80%9A"><span class="nav-number">3.</span> <span class="nav-text">改进MBR：通过显存与显卡沟通</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#bochs%E7%9A%84%E8%B0%83%E8%AF%95%E6%96%B9%E6%B3%95-%E6%8F%92%E6%9B%B2"><span class="nav-number">4.</span> <span class="nav-text">bochs的调试方法(插曲)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%94%B9%E8%BF%9BMBR%EF%BC%9A%E4%B8%8E%E7%A3%81%E7%9B%98%E6%B2%9F%E9%80%9A"><span class="nav-number">5.</span> <span class="nav-text">改进MBR：与磁盘沟通</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Sparkle"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Sparkle</p>
+  <div class="site-description" itemprop="description">If there is no torchlight in the future, I will be the only light.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner page posts-expand">
+
+
+    
+    
+    
+    <div class="post-block" lang="en"><header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">自制简易操作系统（三）
+</h1>
+
+<div class="post-meta-container">
+</div>
+
+</header>
+
+      
+      
+      <div class="post-body">
+          <p>我们将在上一章节的基础上完善MBR,学会使用IO接口的两种方法</p>
+<p>相应的本章一共要完成两个实验：一个是MBR使用显存和显卡沟通，另一个是MBR通过端口将磁盘上的loader程序加载到内存相应位置</p>
+<h1 id="地址、section和vstart"><a href="#地址、section和vstart" class="headerlink" title="地址、section和vstart"></a>地址、section和vstart</h1><ol>
+<li><p>地址</p>
+<p> 地址只是数字，描述各种符号在源程序中的位置，它是源代码文件中符号<strong>偏移</strong>文件开头的位置。编译器的工作就是给代码里的各符号编址。</p>
+<p> 下图给出了一个程序的 源码、地址、反汇编代码：</p>
+<p> <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img1.png" alt="img"></p>
+<p> 仔细观察图片可得到这样一种关系：地址&#x3D;上一个地址+上一个地址内容的长度</p>
+<p> 于是我们得出一个关于地址的结论：编译器给程序中各符号（变量名或函数名）分配的地址就是各符号相对于文件开头的<strong>偏移量</strong></p>
+</li>
+<li><p>section</p>
+<p> 编译器提供section关键字（伪指令）是为了让程序员在逻辑上将程序划分为几个部分。一般section的应用场景就是根据不同的属性人为地讲程序划分几部分，如数据放在一个section中，指令放在另一个section中。</p>
+<p> 下图给出了一个包含section分段程序的 源码、地址、反汇编代码：</p>
+<p> <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img2.png" alt="img"></p>
+<p> <strong>PS：程序第三行地section.data.start代表地是名为data的section在本文件中相对于文件开头的偏移量</strong></p>
+<p> 仔细观察图片我们得出结论：关键字section并没有对程序中的地址产生任何影响，seciton仅仅是为了让开发人员梳理程序之用。</p>
+</li>
+<li><p>vstart：</p>
+<p> vstart的作用是为section内的数据指定一个虚拟的起始地址。</p>
+<p> 下图给出了一个包含vstart修饰section分段程序的 源码、地址、反汇编代码：</p>
+<p> <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img3.png" alt="img"></p>
+<p> 仔细观察图片，首先我们确定vstart对数据本身在文件的真实物理地址没有任何影响。</p>
+<p> 那vstart影响的是什么? vstart影响的是虚拟段基址的值。在没有vstart的情况下，每个段的虚拟段基址默认是上一个段的结尾（首段虚拟段基址默认为0）；有了vstart后，就人为规定了虚拟的段基址。</p>
+<p> vstart的使用时机：我们预先知道我们的程序将来被加载到某地址。</p>
+<p> <strong>PS：vstart&#x3D;xxxx，并不是告诉编译器要把程序加载到地址xxxx，而是开发人员事先知道这段程序会被加载到xxxx，为了保证程序后续地址（相对文件开头地址的偏移量）的正确性，我们使用vstart提前告诉编译器：这个文件数据的相对地址不再是相对于上一个段末尾或者0了，而是要相对于xxxx，编译器编译时就会计算<code>xxxx+地址（相对文件开头地址的偏移量）</code>得到正确地址</strong></p>
+</li>
+</ol>
+<h1 id="CPU的实模式"><a href="#CPU的实模式" class="headerlink" title="CPU的实模式"></a>CPU的实模式</h1><p>实模式是指8086CPU的工作环境、工作内容、工作状态一整套内容（寻址方式、寄存器大小、指令用法等），而不是单一某个方面的内容。</p>
+<p>实模式的特点如下：</p>
+<ol>
+<li><p>CPU只能寻址1MB范围的物理内存（并不代表内存大小1MB），因为它只有20位地址线</p>
+</li>
+<li><p>实模式下操作系统和应用程序的执行权限都一样，没有任何保护；实模式下应用程序也可随意修改操作系统的内存（当然这是不安全的）</p>
+</li>
+<li><p>实模式中CPU使用分段的内存管理模式，即<code>物理地址=段基址&lt;&lt;4+段内偏移</code>，实模式中的逻辑地址就是物理地址，没有虚拟地址一说。</p>
+</li>
+<li><p>实模式中CPU使用中断向量表来响应中断</p>
+</li>
+<li><p>实模式下所有寄存器都是16位</p>
+</li>
+<li><p>实模式的寻址方式可分为三大类寄存器寻址、立即数寻址、内存寻址；其中内存寻址又可以分为直接寻址、基址寻址、变址寻址、基址变址寻址</p>
+</li>
+</ol>
+<p>总而言之：你在汇编语言中接触到的相关知识，基本就是实模式下的相关知识。建议学习<code>王爽的《汇编语言》</code></p>
+<h1 id="改进MBR：通过显存与显卡沟通"><a href="#改进MBR：通过显存与显卡沟通" class="headerlink" title="改进MBR：通过显存与显卡沟通"></a>改进MBR：通过显存与显卡沟通</h1><p>上一章节中我们的MBR是通过BIOS提供的中断例程实现的，BIOS提供的中断例程利用了只有在实模式下才可使用的中断向量表，由于我们进入保护模式后无法调用BIOS提供的中断例程，所以我们必须学会直接显卡沟通。</p>
+<ol>
+<li><p>CPU如何与外设通信？</p>
+<p> CPU与外设的通信采用：<code>CPU——IO接口——外设</code>的形式。不同外设有不同的协议、不同的规则、不同的速度等，CPU无需关心这些，由IO接口来负责二者之间的沟通交流，CPU只需要知道怎样和IO接口沟通就行，如图式结构：</p>
+<p> <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img4.png" alt="img"></p>
+<p> <strong>PS：南桥芯片又叫输入输出控制中心，用于连接一些低速设备，可以把它看作是IO接口的集合管理中心</strong></p>
+</li>
+<li><p>CPU如何与IO接口通信？</p>
+<p> IO接口可以提供两种方式与CPU沟通，一种是IO内存、另一种是IO端口。</p>
+<p> IO内存是将外设的寄存器映射到CPU的地址空间中，使得CPU可以用内存访问指令来访问外设，如同访问内存一样。此时写入特定位置的内存，就相当于写入外设的寄存器里。</p>
+<p> IO端口是将外设的寄存器分配一个唯一的地址，使得CPU可以用专门的<code>in/out</code>(输入输出指令)来访问外设。</p>
+</li>
+<li><p>CPU使用IO内存与显卡沟通</p>
+<p> 显存是显卡中的一块内存，显卡所做的工作就是不断将显存里的数据放到显示器上。</p>
+<p> 显存被映射到CPU的内存中的地址如下：</p>
+<p> <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img5.png" alt="img"></p>
+<p> 我们只需要往<code>0xB80000~0xBFFFF</code>32KB大的显存映射范围内里写入数据，就可以实现直接让数据显示到显示屏上。</p>
+<p> 显卡在加电后，屏幕默认输出格式是80*25，也就是一屏幕共可以输出2000个字符。其中每个字符需要两字节表示，低位字节代表字符的ASCII码，高位字节代表字符的属性信息。32KB&#x2F;4000Byte约等于8屏幕数据，也就是说显存一次输出可以输出8个屏幕的数据。</p>
+<pre><code> ; 修改后的MBR代码如下：实现直接与显卡沟通在屏幕上打印字符
+
+ SECTION MBR vstart=0x7c00
+     ;vstart 指定程序装载地址位0x7c00（约定的MBR装载到内存上的地址）
+
+     mov ax,cs
+     mov ds,ax
+     mov es,ax
+     mov ss,ax
+     mov fs,ax
+     ;利用CS=0初始化各个段寄存器
+     mov sp,0x7c00
+     ;栈顶指针sp指向MBR代码装载处0x7c00，MBR代码向下增长，栈顶指针向上增长，二者不会相互影响
+
+     mov ax,0xb800;
+     mov gs,ax
+     ;令附加段基址寄存器gs指向显存映射地址
+
+ ;------------------------------------------------------------------------------------------
+     ;以下代码利用BIOS提供的int 10中断的6号子功能，实现上卷窗口
+
+     mov ax,0x600
+     mov bx,0x700
+     mov cx,0
+     mov dx,0x184f
+
+     int 0x10
+
+ ;------------------------------------------------------------------------------------------
+     ;以下代码直接向显存输入数据，实现打印输出背景色绿色，前景色红色，并且跳动的字符串&#39;1 MBR&#39;
+
+     mov byte [gs:0x00],&#39;1&#39;
+     mov byte [gs:0x01],0xA4   ;A 表示绿背景闪烁，4表示前景色红色
+
+     mov byte [gs:0x02],&#39; &#39;
+     mov byte [gs:0x03],0xA4   ;A 表示绿背景闪烁，4表示前景色红色
+
+     mov byte [gs:0x04],&#39;M&#39;
+     mov byte [gs:0x05],0xA4   ;A 表示绿背景闪烁，4表示前景色红色
+
+     mov byte [gs:0x06],&#39;B&#39;
+     mov byte [gs:0x07],0xA4   ;A 表示绿背景闪烁，4表示前景色红色
+
+     mov byte [gs:0x08],&#39;R&#39;
+     mov byte [gs:0x09],0xA4   ;A 表示绿背景闪烁，4表示前景色红色
+
+ ;------------------------------------------------------------------------------------------
+
+     jmp $ ;实现死循环，让程序悬停
+
+     times 510-($-$$) db 0  ;确保MBR程序有512个字节，不能少也不能多
+     db 0x55,0xaa           ;确保MBR程序最后两个字节为0x55和0xaa，BIOS得以识别
+</code></pre>
+</li>
+</ol>
+<h1 id="bochs的调试方法-插曲"><a href="#bochs的调试方法-插曲" class="headerlink" title="bochs的调试方法(插曲)"></a>bochs的调试方法(插曲)</h1><p>请运行bochs后，输入<code>help</code>，即可看到bochs相关的所有调试指令</p>
+<p>指令大概分为四类：Debugger control、Execution control、Breakpoint control、CPU and memory contents</p>
+<p>针对大类里的每一个指令，都可以输出<code>help &#39;指令关键字&#39;</code>来查看该指令的具体用法</p>
+<p>不需要对每个指令死记硬背，多多尝试就熟悉了</p>
+<h1 id="改进MBR：与磁盘沟通"><a href="#改进MBR：与磁盘沟通" class="headerlink" title="改进MBR：与磁盘沟通"></a>改进MBR：与磁盘沟通</h1><ol>
+<li><p>in&#x2F;out 命令</p>
+<p> CPU提供了专门的指令来和IO接口进行端口沟通：</p>
+<ul>
+<li><p>in指令用于从端口中读取数据，格式如下：</p>
+<pre><code>  in al,dx
+  in ax,dx
+</code></pre>
+<p>  只要使用in指令，源操作数必须是dx(存放端口号)，而目的操作数是用al，还是ax取决于dx端口指代的寄存器是8位宽还是16位宽</p>
+</li>
+<li><p>out 指令用于往端口中写数据，格式如下：</p>
+<pre><code>  out dx,al
+  out dx,ax
+  out 立即数,al
+  out 立即数,ax
+</code></pre>
+<p>  out指令的源操作数是ax还是al取决于目标端口指代的寄存器是8位宽还是16位宽，源操作数可以是立即数直接给出端口号，也可以用dx（存放端口号）</p>
+</li>
+</ul>
+</li>
+<li><p>磁盘IO端口相关知识</p>
+<ul>
+<li><p>什么是硬盘控制器？</p>
+<p>  硬盘控制器是CPU于硬盘沟通中间的IO接口</p>
+</li>
+<li><p>Primary通道和Secondary通道</p>
+<p>  以前的主机一般只接受四个并口磁盘。主板上提供了两个IDE（Integrated Drive Electronics，硬盘控制器和硬盘集成在一起的集成设备电路）插槽。用Primary通道和Secondary通道来区分这两个不同的IDE，用于连接硬盘和主板。每个通道可以挂载两个硬盘，分别称为主盘（Master）和从盘（Slave）。主盘和从盘的区别主要是在启动顺序和数据传输上，一般来说，主盘优先于从盘启动，而从盘的数据传输需要经过主盘。每个通道都有自己的一组端口寄存器，用于控制和访问硬盘。</p>
+<p>  当然上面的描述是以前主机的硬盘布局，现在的大有不同了，但我们学习使用较为简单的以前主机的IO接口相关知识。</p>
+</li>
+<li><p>LBA和CHS</p>
+<p>  一个磁盘里有很多个扇区，要描述一个扇区的具体位置可以通过多种方法。</p>
+<p>  一般口头上描述扇区的位置可以用“柱面-磁头-扇区”来定位（Cylinder Head Sector），简称为CHS。CHS描述法的扇区并非是从0开始的，而是从1开始的。</p>
+<p>  CHS描述是从物理结构上来描述的，但我们希望在编程时可以不用考虑磁盘的物理结构，只需要通过逻辑结构来定位扇区就行了，于是有了LBA（Logical Block Address）</p>
+<p>  LBA有LBA28和LBA48两种。我们只介绍LBA28：就是通过28位bit来描述一个扇区的位置，最大的寻址范围是2^28。</p>
+<p>  向磁盘沟通时，端口寄存器必须要知道你是向哪一块磁盘沟通，也就是说知道LBA28。我们用3个8位寄存器（LBA low、LBA mid、LBA high）以及device寄存器其中的4位一共28位表示LBA28</p>
+</li>
+<li><p>硬盘控制器主要端口寄存器</p>
+<p>  <img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img6.png" alt="img"></p>
+<ul>
+<li><p>我们在与磁盘沟通时，首先要确认我们是与哪一个通道的主盘&#x2F;从盘沟通，然后查看这张表中对应的端口号，以Primary通道为例：</p>
+</li>
+<li><p>0x1F3、0x1F4、0x1F5三个端口号不论是读操作还是写操作时都是用来记录LBA28低24位的地址的（标记你是与那一块扇区沟通）</p>
+</li>
+<li><p>0x1F0 端口号映射Data寄存器，写操作时，从外面往里面写数据进去；读操作时，从里面往外读数据出来。<strong>该端口是这里唯一的16位寄存器，其余端口都是8位</strong></p>
+</li>
+<li><p>0x1F1 读操作时用于存放失败状态信息，写操作时用于存放写操作参数</p>
+</li>
+<li><p>0x1F2 读操作时用于存放要读取的扇区数，写操作是用于存放要写入的扇区数</p>
+</li>
+<li><p><img src="/img/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E4%B8%89%EF%BC%89/img7.png" alt="img"></p>
+<p>  0x1F6 读写时都是device寄存器，也就是驱动器，具体功能见上图：0~3位放置LBA28的高4位，4位指定是主盘还是从盘，5~7位指定寻址模式（CHS为101，LBA为111）</p>
+<p>  0x1F7 写操作时用于写入命令，一旦写入命令磁盘立即指向，主要有三个命令(1) 0xEC，硬盘识别 （2）0x20，读扇区 （3）0x30，写扇区。读操作时则是statue寄存器，具体功能见上图</p>
+</li>
+</ul>
+</li>
+<li><p>约定好的IO端口沟通操作顺序</p>
+<p>  了解了这些寄存器的功能后我们就可以知道如何与磁盘进行沟通了，但第一步我们先约定一个操作执行顺序，确保大家不会乱（当然你不按照这个顺序也行）：</p>
+<ol>
+<li><p>先选择通道，往该通道的sector cout寄存器写入待操作的扇区数</p>
+</li>
+<li><p>往通道上的三个LBA写入扇区地址LBA28的低24位</p>
+</li>
+<li><p>往device写入LBA28的高4位，指定主从盘，并选择LBA寻址模式</p>
+</li>
+<li><p>往该通道的command寄存器写入命令（一旦写入立即执行）</p>
+</li>
+<li><p>读取status寄存器，判断硬盘工作是否完成</p>
+</li>
+<li><p>如果上诉是写操作，则到此完工；如果上诉是读操作，则还需要一步</p>
+</li>
+<li><p>将硬盘数据读出</p>
+</li>
+</ol>
+<p>  <strong>PS：操作并不是单纯的读，我们要读取一块扇区上的数据，我们要做的一步是把读取命令写入command寄存器，注意，是写入！也就是说读操作中也包含写入的过程</strong></p>
+</li>
+<li><p>常用的数据传输方式</p>
+<p>  当我们要读取硬盘中的某个扇区，我们先写入读取命令并判断硬盘工作已经完成，在判断硬盘工作是否完成(上述5操作)这一步我们区分出了不同的数据传输方式</p>
+<ol>
+<li><p>无条件传输：数据源设备随时准备好数据，CPU随取随拿，如寄存器、内存等设备，CPU无需提前打招呼。</p>
+</li>
+<li><p>查询传送方式：CPU按照一定间隔不断去检测设备是否完成操作，如果完成，则CPU去取数据</p>
+</li>
+<li><p>中断传送方式：CPU无需不断检测，而是当设备完成时触发中断，由中断来通知CPU我数据已经准备好了</p>
+</li>
+<li><p>直接存储器存取方式（DMA）：不让CPU参与传输，完全由数据源设备和内存直接传输，CPU直接到内存中拿数据即可</p>
+</li>
+<li><p>I&#x2F;O处理机传送方式：引入完整的一套硬件来处理这些事，CPU甚至不知道有传输这回事</p>
+</li>
+</ol>
+<p>  <strong>PS:方式1磁盘用不了，方式4、5则需要硬件支持，所以在我们与硬件沟通时采用方式2或3</strong></p>
+</li>
+</ul>
+</li>
+<li><p>接力第三棒：loader</p>
+<p> 我们的MBR受限于512字节的关系，无法做太多的事：没法为内核准备好环境，更没法将内核成功加载到内存并允许。</p>
+<p> 所以我们要在另一个程序中完成初始化环境以及加载内核的任务，这个程序就是加载器loader</p>
+<p> loader的源代码自然也是存在磁盘里的，MBR要负责从硬盘上把loder加载到内存，并把接力棒交给loader</p>
+</li>
+<li><p>修改后的代码</p>
+<ul>
+<li><p>boot.inc(头文件)</p>
+<pre><code>  LOADER_BASE_ADDR equ 0x900
+  ;我们要将loader装载到内存中的可用区域，查询上一章节的1MB内存布局图可看出只有两个位置是可用的：0x500~0x7BFF,0x7E00~0x9FBFF
+  ;我们希望让loader位置在低地址，以便可以空位更多的空间给未来的内核程序加载
+  ;至于为什么不选择0x500而是0x900，则是因为想让程序与程序之间有一点空格 
+
+  LOADER_START_SECTOR equ 0x2
+  ;用LBA描述，磁盘里的第0块扇区已经用于存放MBR代码了
+  ;为了保险起见让扇区之间有间隔，所以loader存放在第2块扇区
+</code></pre>
+</li>
+<li><p>MBR.S</p>
+<pre><code>  ; 主引导程序 MBR ：实现从硬盘上加载loader到内存中，并将接力棒交给loader
+
+  %include &quot;boot.inc&quot;
+  ;连接头文件，定义了LOADER_BASW_ADDR、LOADER_START_SECTOR
+
+  SECTION MBR vstart=0x7c00
+      ;vstart 指定程序装载地址位0x7c00（约定的MBR装载到内存上的地址）
+
+      mov ax,cs
+      mov ds,ax
+      mov es,ax
+      mov ss,ax
+      mov fs,ax
+      ;利用CS=0初始化各个段寄存器
+      mov sp,0x7c00
+      ;栈顶指针sp指向MBR代码装载处0x7c00，MBR代码向下增长，栈顶指针向上增长，二者不会相互影响
+
+      
+
+  ;------------------------------------------------------------------------------------------
+      ;以下代码利用BIOS提供的int 10中断的6号子功能，实现上卷窗口
+
+      mov ax,0x600
+      mov bx,0x700
+      mov cx,0
+      mov dx,0x184f
+
+      int 0x10
+
+  ;------------------------------------------------------------------------------------------
+      ;以下是通过寄存器传递参数并调用 loader_ready_proc
+
+      mov eax,LOADER_START_SECTOR ;eax记录LBA28，也就是loader在磁盘上的扇区地址
+      mov bx,LOADER_BASE_ADDR     ;bx记录loader将要被移动到内存里哪个位置
+      mov cx,1                    ;cx记录移动的扇区数
+
+      call loader_ready_proc      ;调用函数装载loader
+      jmp LOADER_BASE_ADDR        ;跳转到被装载到内存里的loader，将接力棒交给它
+  ;------------------------------------------------------------------------------------------
+  ;该函数的功能是装载loader
+  loader_ready_proc:
+      mov esi,eax                 ;ax会在后续in/out指令被使用，所以备份参数
+      mov di,cx                   ;di会在后续循环中被用到，所以备份参数
+
+
+      ;第一步：先选择通道，往该通道的sector cout寄存器写入待操作的扇区数
+      mov ax,di
+      mov dx,0x1f2
+      out dx,al
+
+      mov eax,esi                  ;复原eax
+
+
+      ;第二步往通道上的三个LBA写入扇区地址LBA28的低24位
+      mov dx,0x1f3
+      out dx,al
+
+      mov cl,8
+      shr eax,cl       
+      mov dx,0x1f4     
+      out dx,al
+
+      shr eax,cl
+      mov dx,0x1f5
+      out dx,al
+
+      
+      ;第三步 往device写入LBA28的高4位，指定主从盘，并选择LBA寻址模式
+      shr eax,cl
+      and al,0x0f
+      or al,0xe0
+      mov dx,0x1f6
+      out dx,al
+
+
+      ;第四步往该通道的command寄存器写入命令（一旦写入立即执行）
+      mov dx,0x1f7
+      mov al,0x20
+      out dx,al
+
+
+      ;第五步读取status寄存器，判断硬盘工作是否完成(这边采用查询传输的方式)
+  .not_ready:
+      nop            ;增加循环查询的延迟
+      in al,dx
+      and al,0x88
+      cmp al,0x08
+      jnz .not_ready
+
+
+      ;最后一步将硬盘数据读出
+      mov ax,di
+      mov dx,256
+      mul dx
+      mov cx,ax
+      ;一个扇区512字节，要读取di个扇区，每次读取2字节(16位的data寄存器),一共要循环读取di*512/2次
+
+      mov dx,0x1f0
+  .go_on_read:
+      in ax,dx
+      mov [bx],ax
+      add bx,2
+      loop .go_on_read
+
+      ;函数loader_ready_proc结束返回
+      ret
+
+
+      times 510-($-$$) db 0  ;确保MBR程序有512个字节，不能少也不能多
+      db 0x55,0xaa           ;确保MBR程序最后两个字节为0x55和0xaa，BIOS得以识别
+</code></pre>
+</li>
+<li><p>loader.S</p>
+<pre><code>  ;这串代码并非实现真正的loader功能，而是只是在屏幕上打印字符，来验证我们是否真正装载并执行了loader
+
+
+  %include &quot;boot.inc&quot;
+
+  section loader vstart=LOADER_BASE_ADDR
+
+      mov ax,0xb800;
+      mov gs,ax
+      ;令附加段基址寄存器gs指向显存映射地址
+
+  ;输出背景色绿色，前景色红色，并且跳动闪烁的字符串&quot;2 LOADER&quot;
+
+      mov byte [gs:0x00],&#39;2&#39;
+      mov byte [gs:0x01],0xA4   ;A 表示绿背景闪烁，4表示前景色红色
+
+      mov byte [gs:0x02],&#39; &#39;
+      mov byte [gs:0x03],0xA4   ;A 表示绿背景闪烁，4表示前景色红色
+
+      mov byte [gs:0x04],&#39;L&#39;
+      mov byte [gs:0x05],0xA4   ;A 表示绿背景闪烁，4表示前景色红色
+
+      mov byte [gs:0x06],&#39;O&#39;
+      mov byte [gs:0x07],0xA4   ;A 表示绿背景闪烁，4表示前景色红色
+
+      mov byte [gs:0x08],&#39;A&#39;
+      mov byte [gs:0x09],0xA4   ;A 表示绿背景闪烁，4表示前景色红色
+
+      mov byte [gs:0x0A],&#39;D&#39;
+      mov byte [gs:0x0B],0xA4   ;A 表示绿背景闪烁，4表示前景色红色
+
+      mov byte [gs:0x0C],&#39;E&#39;
+      mov byte [gs:0x0D],0xA4   ;A 表示绿背景闪烁，4表示前景色红色
+
+      mov byte [gs:0x0E],&#39;R&#39;
+      mov byte [gs:0x0F],0xA4   ;A 表示绿背景闪烁，4表示前景色红色
+
+      jmp $
+</code></pre>
+</li>
+<li><p>一个小细节<br>  这些代码中默认我们的虚拟磁盘是Primary通道的主盘，可能有人会疑惑为什么是Primary通道的主盘，详细信息请看配置文件bochsrc.disk，如下所示</p>
+<pre><code>  ata0:enabled=1,ioaddr1=0x1f0,ioaddr2=0x3f0,irq=14
+  ata0-master: type=disk, path=&quot;hd60M.img&quot;, mode=flat,cylinders=121,heads=16,spt=63
+  # ata0代表IDE0也就是Primary通道，atao-master代表的是Primary通道的主盘
+</code></pre>
+</li>
+</ul>
+</li>
+<li><p>装载代码</p>
+<p> 我们现在有三个文件：头文件boot.inc、mbr.S、loader.S</p>
+<ul>
+<li><p>boot.inc<br>  请在代码文件夹下创建一个文件夹include,把boot.inc放在include下面，用于被其他文件引用链接</p>
+</li>
+<li><p>mbr.S<br>  我们使用在原有的命令上添加了include路径：</p>
+<pre><code>  nasm -I include/ -o mbr.bin mbr.S
+</code></pre>
+<p>  然后继续使用dd命令将他装载到hd60M.img的第一块扇区:</p>
+<pre><code>  dd if=/home/sparkle2/codeset/mbr.bin of=/home/sparkle2/bochs/hd60M.img bs=512 count=1 conv=notrunc
+</code></pre>
+</li>
+<li><p>loader.S<br>  我们同样用带有include路径的命令编译它:</p>
+<pre><code>  nasm -I include/ -o loader.bin loader.S
+</code></pre>
+<p>  然后继续使用dd命令将他装载到hd60M.img的第三块扇区（seek&#x3D;2代表跳过两块）:</p>
+<pre><code>  dd if=/home/sparkle2/codeset/loader.bin of=/home/sparkle2/bochs/hd60M.img bs=512 count=1 seek=2 conv=notrunc
+</code></pre>
+</li>
+</ul>
+<p> 最后运行命令<code>bin/bochs -f bochsrc.disk</code>看到屏幕上出现<code>2 loader</code>的输出字符实验就成功了</p>
+</li>
+</ol>
+
+      </div>
+      
+      
+      
+    </div>
+
+    
+    
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Sparkle</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

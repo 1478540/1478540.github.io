@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="文件系统文件系统的核心是管理 超级块用于描述管理信息（大小一共512字节，一扇区也是一块） &#x2F;* 超级块 *&#x2F; struct super_block &amp;#123;     uint32_t magic;		    &#x2F;&#x2F; 用来标识文件系统类型,支持多文件系统的操作系统通过此标志来识别文件系统类型      &#x2F;&#x2F;描述总分区信息     uint32_t sec_cnt;		    &#x2F;&#x2F; 本分区总共的扇">
+<meta property="og:type" content="website">
+<meta property="og:title" content="自制简易操作系统（十四）">
+<meta property="og:url" content="http://example.com/MyTemp/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%E5%9B%9B%EF%BC%89.html">
+<meta property="og:site_name" content="Sparkle&#39;s Space">
+<meta property="og:description" content="文件系统文件系统的核心是管理 超级块用于描述管理信息（大小一共512字节，一扇区也是一块） &#x2F;* 超级块 *&#x2F; struct super_block &amp;#123;     uint32_t magic;		    &#x2F;&#x2F; 用来标识文件系统类型,支持多文件系统的操作系统通过此标志来识别文件系统类型      &#x2F;&#x2F;描述总分区信息     uint32_t sec_cnt;		    &#x2F;&#x2F; 本分区总共的扇">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2023-12-23T17:15:47.000Z">
+<meta property="article:modified_time" content="2023-12-30T03:57:11.939Z">
+<meta property="article:author" content="Sparkle">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/MyTemp/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%E5%9B%9B%EF%BC%89">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"en","comments":true,"permalink":"http://example.com/MyTemp/%E8%87%AA%E5%88%B6%E7%AE%80%E6%98%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E5%8D%81%E5%9B%9B%EF%BC%89.html","path":"MyTemp/自制简易操作系统（十四）.html","title":"自制简易操作系统（十四）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>自制简易操作系统（十四） | Sparkle's Space
+</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Sparkle's Space</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F"><span class="nav-number">1.</span> <span class="nav-text">文件系统</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B6%85%E7%BA%A7%E5%9D%97"><span class="nav-number">1.1.</span> <span class="nav-text">超级块</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A9%BA%E9%97%B2%E5%9D%97%E4%BD%8D%E5%9B%BE"><span class="nav-number">1.1.1.</span> <span class="nav-text">空闲块位图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#inode%E4%BD%8D%E5%9B%BE"><span class="nav-number">1.1.2.</span> <span class="nav-text">inode位图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#inode%E8%A1%A8"><span class="nav-number">1.1.3.</span> <span class="nav-text">inode表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B9%E7%9B%AE%E5%BD%95%E6%95%B0%E6%8D%AE%E5%8C%BA"><span class="nav-number">1.1.4.</span> <span class="nav-text">根目录数据区</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#inode"><span class="nav-number">1.2.</span> <span class="nav-text">inode</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Sparkle"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Sparkle</p>
+  <div class="site-description" itemprop="description">If there is no torchlight in the future, I will be the only light.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner page posts-expand">
+
+
+    
+    
+    
+    <div class="post-block" lang="en"><header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">自制简易操作系统（十四）
+</h1>
+
+<div class="post-meta-container">
+</div>
+
+</header>
+
+      
+      
+      <div class="post-body">
+          <h1 id="文件系统"><a href="#文件系统" class="headerlink" title="文件系统"></a>文件系统</h1><p>文件系统的核心是管理</p>
+<h2 id="超级块"><a href="#超级块" class="headerlink" title="超级块"></a>超级块</h2><p>用于描述管理信息（大小一共512字节，一扇区也是一块）</p>
+<pre><code>/* 超级块 */
+struct super_block &#123;
+    uint32_t magic;		    // 用来标识文件系统类型,支持多文件系统的操作系统通过此标志来识别文件系统类型
+
+    //描述总分区信息
+    uint32_t sec_cnt;		    // 本分区总共的扇区数
+    uint32_t inode_cnt;		    // 本分区中inode数量
+    uint32_t part_lba_base;	    // 本分区的起始lba地址
+
+
+    //描述空闲块位图
+    uint32_t block_bitmap_lba;	    // 块位图本身起始扇区地址
+    uint32_t block_bitmap_sects;     // 扇区位图本身占用的扇区数量
+
+
+    //描述inode位图
+    uint32_t inode_bitmap_lba;	    // i结点位图起始扇区lba地址
+    uint32_t inode_bitmap_sects;	    // i结点位图占用的扇区数量
+
+
+    //描述inode表
+    uint32_t inode_table_lba;	    // i结点表起始扇区lba地址
+    uint32_t inode_table_sects;	    // i结点表占用的扇区数量
+
+
+    //描述数据区(包含根目录)
+    uint32_t data_start_lba;	    // 数据区开始的第一个扇区号
+    uint32_t root_inode_no;	    // 根目录所在的I结点号
+    uint32_t dir_entry_size;	    // 目录项大小
+
+    uint8_t  pad[460];		    // 加上460字节,凑够512字节1扇区大小
+&#125; __attribute__ ((packed));
+</code></pre>
+<h3 id="空闲块位图"><a href="#空闲块位图" class="headerlink" title="空闲块位图"></a>空闲块位图</h3><h3 id="inode位图"><a href="#inode位图" class="headerlink" title="inode位图"></a>inode位图</h3><h3 id="inode表"><a href="#inode表" class="headerlink" title="inode表"></a>inode表</h3><h3 id="根目录数据区"><a href="#根目录数据区" class="headerlink" title="根目录数据区"></a>根目录数据区</h3><h2 id="inode"><a href="#inode" class="headerlink" title="inode"></a>inode</h2><p>inode相当于是文件的本身，一个inode就是一个文件</p>
+<pre><code>/* inode结构 */
+struct inode &#123;
+    uint32_t i_no;    // inode编号
+
+    /* 当此inode是文件时,i_size是指文件大小,
+    若此inode是目录,i_size是指该目录下所有目录项大小之和*/
+    uint32_t i_size;
+
+    uint32_t i_open_cnts;   // 记录此文件被打开的次数
+    bool write_deny;	   // 写文件不能并行,进程写文件前检查此标识
+
+    /* i_sectors[0-11]是直接块, i_sectors[12]用来存储一级间接块指针 */
+    uint32_t i_sectors[13];
+    struct list_elem inode_tag;
+&#125;;
+</code></pre>
+
+      </div>
+      
+      
+      
+    </div>
+
+    
+    
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Sparkle</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
