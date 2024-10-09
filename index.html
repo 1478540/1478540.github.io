@@ -179,7 +179,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2024-10-09 17:17:03" itemprop="dateModified" datetime="2024-10-09T17:17:03+08:00">2024-10-09</time>
+      <time title="Modified: 2024-10-09 17:42:32" itemprop="dateModified" datetime="2024-10-09T17:42:32+08:00">2024-10-09</time>
     </span>
 
   
@@ -262,7 +262,7 @@
 <p>至此，整个文件系统的布局已经完整，文件之间的组织方式也已经清晰，大体上如下图：</p>
 <p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img2.png" alt="img"></p>
 <p>PS:一个操作系统具有多个分区，也就是多个文件系统，但初始化时往往只会挂载一个主要的文件系统，也就是当前文件系统</p>
-<h2 id="如何进行文件操作？"><a href="#如何进行文件操作？" class="headerlink" title="如何进行文件操作？"></a>如何进行文件操作？</h2><p>众所周知，一个电脑允许多个进程，一个进程又允许多次打开同一个文件或者打开多个不同的文件。并对文件进行操作。</p>
+<h2 id="进程间的文件操作"><a href="#进程间的文件操作" class="headerlink" title="进程间的文件操作"></a>进程间的文件操作</h2><p>众所周知，一个电脑允许多个进程，一个进程又允许多次打开同一个文件或者打开多个不同的文件。并对文件进行操作。</p>
 <p>我们该如何处理 多进程 与 多文件 之间的关联问题？</p>
 <p>为此，我们引入了如下概念：文件描述符、文件结构、文件表、inode缓冲队列</p>
 <p>它们之间的逻辑关系如下图所示：</p>
@@ -318,6 +318,9 @@
 
     5. 根据inode的块指针修改磁盘上对应空间的数据
 </code></pre>
+<h2 id="文件检索的关键-和"><a href="#文件检索的关键-和" class="headerlink" title="文件检索的关键 . 和 .."></a>文件检索的关键 . 和 ..</h2><p>任何一个目录下都需要两个子目录 . 和 ..</p>
+<p>. 代表当前目录， .. 代表父目录，二者有助于文件系统的导航</p>
+<p>具体的实现就是在当前目录下的目录项中将.和..添加进去</p>
 <h1 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h1><pre><code>/* 分区结构:一个分区就是一个文件系统 */
 struct partition &#123;
     uint32_t start_lba;		    // 起始扇区
