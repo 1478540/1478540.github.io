@@ -19,25 +19,32 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js"></script>
 
-    <meta name="description" content="整体设计方案 数据结构&#x2F;* 分区结构:一个分区就是一个文件系统 *&#x2F; struct partition &amp;#123;     uint32_t start_lba;		    &#x2F;&#x2F; 起始扇区     uint32_t sec_cnt;		    &#x2F;&#x2F; 扇区数     struct disk* my_disk;	    &#x2F;&#x2F; 分区所属的硬盘     struct list_elem part_tag">
+    <meta name="description" content="整体设计方案本文件系统仿照Linux的ext2文件系统设计  文件的读写单位——块硬盘的读写单位是扇区，但是由于硬盘读写速度较慢，所以当我们读写文件时，不是一个一个扇区进行读写，而是凑齐数个扇区一起读写，我们将其称为块。 因此 块是文件的读写单位， 一个块包含数个扇区（一定是扇区的整数倍） 文件的本质——inode文件其实就是存储在硬盘上的数据，并且是以块为单位进行读写 我们关注文件，本质上是关注">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SimpleOS-文件系统">
 <meta property="og:url" content="http://example.com/2024/01/01/SimpleOS-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/index.html">
 <meta property="og:site_name" content="Sparkle&#39;s Space">
-<meta property="og:description" content="整体设计方案 数据结构&#x2F;* 分区结构:一个分区就是一个文件系统 *&#x2F; struct partition &amp;#123;     uint32_t start_lba;		    &#x2F;&#x2F; 起始扇区     uint32_t sec_cnt;		    &#x2F;&#x2F; 扇区数     struct disk* my_disk;	    &#x2F;&#x2F; 分区所属的硬盘     struct list_elem part_tag">
+<meta property="og:description" content="整体设计方案本文件系统仿照Linux的ext2文件系统设计  文件的读写单位——块硬盘的读写单位是扇区，但是由于硬盘读写速度较慢，所以当我们读写文件时，不是一个一个扇区进行读写，而是凑齐数个扇区一起读写，我们将其称为块。 因此 块是文件的读写单位， 一个块包含数个扇区（一定是扇区的整数倍） 文件的本质——inode文件其实就是存储在硬盘上的数据，并且是以块为单位进行读写 我们关注文件，本质上是关注">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img7.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img11.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img12.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img13.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img14.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img15.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img16.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img17.png">
 <meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img2.png">
 <meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img3.png">
+<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img18.png">
 <meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img6.png">
 <meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img4.png">
 <meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img5.png">
 <meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img8.png">
 <meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img9.png">
 <meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img10.png">
-<meta property="og:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img1.png">
 <meta property="article:published_time" content="2024-01-01T02:29:13.000Z">
-<meta property="article:modified_time" content="2024-09-12T02:19:33.832Z">
+<meta property="article:modified_time" content="2024-10-09T09:17:03.350Z">
 <meta property="article:author" content="Sparkle">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://example.com/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img7.png">
@@ -115,7 +122,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B4%E4%BD%93%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88"><span class="nav-number">1.</span> <span class="nav-text">整体设计方案</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">数据结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%87%BD%E6%95%B0%E8%A1%A8"><span class="nav-number">3.</span> <span class="nav-text">函数表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-fs-c"><span class="nav-number">3.1.</span> <span class="nav-text">fs&#x2F;fs.c</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-dir-c"><span class="nav-number">3.2.</span> <span class="nav-text">fs&#x2F;dir.c</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-inode-c"><span class="nav-number">3.3.</span> <span class="nav-text">fs&#x2F;inode.c</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-file-c"><span class="nav-number">3.4.</span> <span class="nav-text">fs&#x2F;file.c</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%87%BD%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="nav-number">4.</span> <span class="nav-text">关键函数说明</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%88%9D%E5%A7%8B%E5%8C%96%E5%87%BD%E6%95%B0"><span class="nav-number">4.1.</span> <span class="nav-text">文件系统初始化函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0"><span class="nav-number">4.2.</span> <span class="nav-text">文件操作相关函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B7%A5%E4%BD%9C%E8%B7%AF%E5%BE%84%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0"><span class="nav-number">4.3.</span> <span class="nav-text">工作路径相关函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-file-c-file-create"><span class="nav-number">4.4.</span> <span class="nav-text">fs&#x2F;file.c&#x2F;file_create()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-file-c-file-write"><span class="nav-number">4.5.</span> <span class="nav-text">fs&#x2F;file.c&#x2F;file_write()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-file-c-file-read"><span class="nav-number">4.6.</span> <span class="nav-text">fs&#x2F;file.c&#x2F;file_read()</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%83%8C%E6%99%AF%E7%9F%A5%E8%AF%86"><span class="nav-number">5.</span> <span class="nav-text">背景知识</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#inode%E3%80%81super-block%E3%80%81%E7%9B%AE%E5%BD%95%E3%80%81%E7%9B%AE%E5%BD%95%E9%A1%B9%E3%80%81%E8%B6%85%E7%BA%A7%E5%9D%97%E4%B8%8E%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%B8%83%E5%B1%80"><span class="nav-number">5.1.</span> <span class="nav-text">inode、super_block、目录、目录项、超级块与文件系统布局</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A1%AC%E7%9B%98%E9%A9%B1%E5%8A%A8"><span class="nav-number">5.2.</span> <span class="nav-text">硬盘驱动</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B7%A5%E5%85%B7%E5%9B%BE%E8%A1%A8"><span class="nav-number">6.</span> <span class="nav-text">工具图表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%B8%83%E5%B1%80"><span class="nav-number">6.1.</span> <span class="nav-text">文件系统布局</span></a></li></ol></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B4%E4%BD%93%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88"><span class="nav-number">1.</span> <span class="nav-text">整体设计方案</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E7%9A%84%E8%AF%BB%E5%86%99%E5%8D%95%E4%BD%8D%E2%80%94%E2%80%94%E5%9D%97"><span class="nav-number">1.1.</span> <span class="nav-text">文件的读写单位——块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E7%9A%84%E6%9C%AC%E8%B4%A8%E2%80%94%E2%80%94inode"><span class="nav-number">1.2.</span> <span class="nav-text">文件的本质——inode</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%80%E6%9C%89%E6%96%87%E4%BB%B6%E7%9A%84%E9%9B%86%E5%90%88%E2%80%94%E2%80%94inode%E6%95%B0%E7%BB%84"><span class="nav-number">1.3.</span> <span class="nav-text">所有文件的集合——inode数组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E7%9A%84%E5%88%86%E7%B1%BB"><span class="nav-number">1.4.</span> <span class="nav-text">文件的分类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%8C%E6%95%B4%E7%9A%84FCB%E2%80%94%E2%80%94inode-%E7%9B%AE%E5%BD%95%E9%A1%B9"><span class="nav-number">1.5.</span> <span class="nav-text">完整的FCB——inode+目录项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%B8%83%E5%B1%80"><span class="nav-number">1.6.</span> <span class="nav-text">文件系统的布局</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C%EF%BC%9F"><span class="nav-number">1.7.</span> <span class="nav-text">如何进行文件操作？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">数据结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%87%BD%E6%95%B0%E8%A1%A8"><span class="nav-number">3.</span> <span class="nav-text">函数表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-fs-c"><span class="nav-number">3.1.</span> <span class="nav-text">fs&#x2F;fs.c</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-dir-c"><span class="nav-number">3.2.</span> <span class="nav-text">fs&#x2F;dir.c</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-inode-c"><span class="nav-number">3.3.</span> <span class="nav-text">fs&#x2F;inode.c</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-file-c"><span class="nav-number">3.4.</span> <span class="nav-text">fs&#x2F;file.c</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%87%BD%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="nav-number">4.</span> <span class="nav-text">关键函数说明</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%88%9D%E5%A7%8B%E5%8C%96%E5%87%BD%E6%95%B0"><span class="nav-number">4.1.</span> <span class="nav-text">文件系统初始化函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0"><span class="nav-number">4.2.</span> <span class="nav-text">文件操作相关函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B7%A5%E4%BD%9C%E8%B7%AF%E5%BE%84%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0"><span class="nav-number">4.3.</span> <span class="nav-text">工作路径相关函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-file-c-file-create"><span class="nav-number">4.4.</span> <span class="nav-text">fs&#x2F;file.c&#x2F;file_create()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-file-c-file-write"><span class="nav-number">4.5.</span> <span class="nav-text">fs&#x2F;file.c&#x2F;file_write()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fs-file-c-file-read"><span class="nav-number">4.6.</span> <span class="nav-text">fs&#x2F;file.c&#x2F;file_read()</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -194,7 +201,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2024-09-12 10:19:33" itemprop="dateModified" datetime="2024-09-12T10:19:33+08:00">2024-09-12</time>
+      <time title="Modified: 2024-10-09 17:17:03" itemprop="dateModified" datetime="2024-10-09T17:17:03+08:00">2024-10-09</time>
     </span>
 
   
@@ -206,7 +213,132 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><h1 id="整体设计方案"><a href="#整体设计方案" class="headerlink" title="整体设计方案"></a>整体设计方案</h1><p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img7.png" alt="img"></p>
+    <div class="post-body" itemprop="articleBody"><h1 id="整体设计方案"><a href="#整体设计方案" class="headerlink" title="整体设计方案"></a>整体设计方案</h1><p>本文件系统仿照Linux的ext2文件系统设计</p>
+<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img7.png" alt="img"></p>
+<h2 id="文件的读写单位——块"><a href="#文件的读写单位——块" class="headerlink" title="文件的读写单位——块"></a>文件的读写单位——块</h2><p>硬盘的读写单位是扇区，但是由于硬盘读写速度较慢，所以当我们读写文件时，不是一个一个扇区进行读写，而是凑齐数个扇区一起读写，我们将其称为块。</p>
+<p>因此 块是文件的读写单位， 一个块包含数个扇区（一定是扇区的整数倍）</p>
+<h2 id="文件的本质——inode"><a href="#文件的本质——inode" class="headerlink" title="文件的本质——inode"></a>文件的本质——inode</h2><p>文件其实就是存储在硬盘上的数据，并且是以块为单位进行读写</p>
+<p>我们关注文件，本质上是关注<code>数据在硬盘上存储的块的组织方式</code>（数据块在硬盘上是不连续的）</p>
+<p>FAT文件系统曾采用<code>链式结构</code>进行组织（每个块的最后存储下一个块的地址），但由于访问文件中某一个块时都得从头遍历，最终放弃使用该文件系统</p>
+<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img11.png" alt="img"></p>
+<p>UINX操作系统采用<code>索引结构inode</code>进行组织，后来Linux的ext2文件系统也是模仿该组织形式，本项目同样采用索引结构inode</p>
+<p>索引结构说简单点就是一个数组，每一个元素就是每一个块，比起链式结构来说，访问某个特定的块无需从头遍历</p>
+<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img12.png" alt="img"></p>
+<p>所以现在看来inode就是一个数组，数组元素就是块地址，我们根据数组的索引可以方便的寻找到对应块的地址</p>
+<p>然而真正的inode并非这么简单，它还需要扩展两点</p>
+<ul>
+<li><p>文件过大怎么办？——引入间接块索引表指针</p>
+<pre><code>  假设我们一个indoe包含15个索引项，其中前面12个是直接块指针。当一个文件大小小于等于12块时就可以只使用前12个索引项解决问题。
+
+  当文件大小超越12个块了怎么办？
+
+  我们把第13个索引项作为一级间接块索引表指针，它指向一级间接块索引表（单独占一个块），而一级间接块索引表上面又存储着256个直接块地址。于是文件最大可达12+256=268个块
+
+  当文件超越268个块了怎么办？
+
+  我们把第14个索引项作为二级间接块索引表指针，它指向256个一级间接块索引表指针，于是文件最大可达12+256+256*256个块
+
+  文件大小还是太大了怎么办？
+
+  我们把第15个索引项作为三级间接块索引表指针，它指向256个二级间接块索引表指针，于是文件最大可达12+256+256*256+256*256*256个块
+
+  一般的文件无法超越这个大小。再大的文件就只能呢使用mv命令分割成数个小文件
+</code></pre>
+</li>
+<li><p>inode真的只是一个数组吗？</p>
+<pre><code>  其实不然，inode最核心的部分确实是块数组。但inode的本质其实是文件的元信息。除了包含块数组（描述文件存储位置），还包含一些其他的元信息，例如：i结点编号（inode的唯一编号）、文件大小、权限、创建时间、属主等等
+</code></pre>
+</li>
+</ul>
+<p>结合上述两点扩展，现在真正的inode如下图所示：</p>
+<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img13.png" alt="img"></p>
+<h2 id="所有文件的集合——inode数组"><a href="#所有文件的集合——inode数组" class="headerlink" title="所有文件的集合——inode数组"></a>所有文件的集合——inode数组</h2><p>一个inode就是一个文件，我们将所有inode的编号作为索引，inode地址作为元素，构成一个inode数组。</p>
+<p>现在所有的inode地址信息都集合在inode数组里了，只需要提供inode编号，我就可以去查找具体的inode</p>
+<h2 id="文件的分类"><a href="#文件的分类" class="headerlink" title="文件的分类"></a>文件的分类</h2><p>文件包含两大类：目录文件 和 普通文件</p>
+<p>日常口语中的文件大多指的是普通文件，但本文讨论的文件既包括普通文件也包括目录文件</p>
+<p>目录也是文件？对的，在ext2文件系统中，目录文件和普通文件一样都算文件，它们的真面目也都是<code>inode</code></p>
+<p>唯一的区别就是数据块存储的内容不同。目录文件的数据块存储的内容是<code>目录项</code>,而普通文件的数据块存储的内容是<code>普通数据</code>。</p>
+<p>二者对外表现都是inode，也就是说，在没有外来信息（上级目录）提供帮助的情况下，一个inode就是一个inode,你永远无法区分它到底是目录文化还是普通文件。</p>
+<p>PS：<code>目录项</code>是什么？目录项是目录文件下的单位表项，它将inode编号、文件名、文件类型三者关联起来，如图：</p>
+<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img14.png" alt="img"></p>
+<h2 id="完整的FCB——inode-目录项"><a href="#完整的FCB——inode-目录项" class="headerlink" title="完整的FCB——inode+目录项"></a>完整的FCB——inode+目录项</h2><p>FCB全称是文件控制块，只要是用于管理、控制文件相关信息的数据结构都称为FCB</p>
+<p>ext2文件系统里的FCB包含inode和目录项两大数据结构，也就是说只凭借二者就可以完整的组织起所有的文件</p>
+<p>inode和目录项的关系参照下图：</p>
+<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img15.png" alt="img"></p>
+<pre><code>    我们假设inode1是根目录，是一切最开始的文件。由于根目录文件的位置是固定不动的，所以我们能确定它是目录文件而不会混淆，根目录文件里的数据块存储的理所当然是一系列目录项。
+    
+    而目录项上记载了文件的类型、文件名称、inode编号
+
+    我们的inode2类型是普通文件，所以我们可以根据inode编号2在inode数组中查找到对应的inode地址。然后根据块指针找到硬盘上对应的数据块，并读取数据块上的普通数据
+
+    我们的inode3类型是目录文件，所以我们可以根据inode编号3在inode数组中查找到对应的inode地址。然后根据块指针找到硬盘上的对应块，并读取数据块上的目录项
+</code></pre>
+<p>现在，假设我们有一串完整的文件地址，例如：<code>D:\CodeSet\myBlog\source\img\SimpleOS-7-文件系统\img11.png</code><br>我们就可以根据上诉方法一步一步递归查找，最后寻找到正确的文件</p>
+<h2 id="文件系统的布局"><a href="#文件系统的布局" class="headerlink" title="文件系统的布局"></a>文件系统的布局</h2><p>一个文件系统就是一个分区，而每一个硬盘分区的空间大小是有限的。不论是inode还是用于存储数据的空闲块都需要占据同一个分区的空间。因此，一个分区所拥有的inode和空闲块都是有限的，而且需要使用<code>位图</code>数据结构进行管理。</p>
+<p>综上，一个文件系统需要inode位图、空闲块位图、inode数组、固定的根目录位置，以及还需要一个用来描述该文件系统元信息的<code>超级块</code></p>
+<p>文件系统在磁盘上的布局如下图所示：</p>
+<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img16.png" alt="img"></p>
+<p>其中<code>超级块</code>的结构如下图所示：</p>
+<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img17.png" alt="img"></p>
+<p>至此，整个文件系统的布局已经完整，文件之间的组织方式也已经清晰，大体上如下图：</p>
+<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img2.png" alt="img"></p>
+<p>PS:一个操作系统具有多个分区，也就是多个文件系统，但初始化时往往只会挂载一个主要的文件系统，也就是当前文件系统</p>
+<h2 id="如何进行文件操作？"><a href="#如何进行文件操作？" class="headerlink" title="如何进行文件操作？"></a>如何进行文件操作？</h2><p>众所周知，一个电脑允许多个进程，一个进程又允许多次打开同一个文件或者打开多个不同的文件。并对文件进行操作。</p>
+<p>我们该如何处理 多进程 与 多文件 之间的关联问题？</p>
+<p>为此，我们引入了如下概念：文件描述符、文件结构、文件表、inode缓冲队列</p>
+<p>它们之间的逻辑关系如下图所示：</p>
+<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img3.png" alt="img"></p>
+<ul>
+<li><p>文件结构file</p>
+<pre><code>  文件结构file用于记录文件操作（光标偏移量等），每次打开一个文件同时就会产生一个文件结构file，多次打开该文件就会产生多个文件结构。
+
+  文件结构file如下图所示：
+</code></pre>
+</li>
+</ul>
+<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img18.png" alt="img"></p>
+<ul>
+<li><p>文件表</p>
+<pre><code>  文件表就是文件结构file集成的数组。文件表用于记录系统打开的文件（不能超过规定的系统最大打开文件数）
+
+  文件表存在于内存当中。每当系统初始化后（主文件系统已挂载），系统内存将会申请文件表所需的空间，并为数组的每一个元素置NULL，直到有文件被打开时，文件表会填写相应的文件结构file并返回下标（一般来说下表0被留给标准输入、1被留给标准输出、2被留给标准错误）。
+</code></pre>
+</li>
+<li><p>inode缓冲队列</p>
+<pre><code>  每一个被挂载的分区都会初始化自己的indoe缓冲队列，它是该分区所有被打开的文件inode组成的缓冲队列（同一个文件被打开多次的情况下，也只会有唯一一个inode存在该队列，只不过该inode上记载着被打开的次数）
+
+  inode缓冲队列也是存在于内存当中。
+</code></pre>
+</li>
+<li><p>文件描述符</p>
+<pre><code>  每一个PCB（进程控制块）都会有一个文件描述符数组，用于记录该进程打开的文件（不能超过规定的进程最大打开文件数）。
+
+  该文件描述符数组存储的元素即是相对应的文件结构在文件表中的下标
+</code></pre>
+</li>
+</ul>
+<p>当一个进程需要打开一个新文件时会经历如下步骤：</p>
+<pre><code>    1. 进程提供新文件的inode号作为参数调用函数
+
+    2. 检测inode缓冲队列中是否存在该inode，如果存在则inode记录的文件打开次数加一，如果不存在则从硬盘里寻找该inode并加入缓冲队列
+    
+    3. 从文件表file_table中获取一个空闲位,并填入新构建的文件结构file(指向inode),然后返回该文件结构在文件表中的下标
+
+    4. 进程PCB取得下标，存储在文件描述符数组中，并返回对应的文件描述符数组下标（即文件描述符）
+
+    5. 调用函数结束，取得一个文件描述符
+</code></pre>
+<p>当一个进程需要修改一个已经打开的文件时会经历如下步骤：</p>
+<pre><code>    1. 进程提供 需要修改文件的 文件描述符 作为参数调用函数
+
+    2. 根据文件描述符在PCB中寻找到对应文件结构在文件表里的下标
+
+    3. 根据下标在文件表里取得对应的文件结构
+
+    4. 根据文件结构在inode缓冲队列里找到对应的inode
+
+    5. 根据inode的块指针修改磁盘上对应空间的数据
+</code></pre>
 <h1 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h1><pre><code>/* 分区结构:一个分区就是一个文件系统 */
 struct partition &#123;
     uint32_t start_lba;		    // 起始扇区
@@ -283,8 +415,6 @@ struct dir_entry &#123;
     enum file_types f_type;	            // 文件类型
 &#125;;
 </code></pre>
-<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img2.png" alt="img"></p>
-<p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img3.png" alt="img"></p>
 <h1 id="函数表"><a href="#函数表" class="headerlink" title="函数表"></a>函数表</h1><h2 id="fs-fs-c"><a href="#fs-fs-c" class="headerlink" title="fs&#x2F;fs.c"></a>fs&#x2F;fs.c</h2><pre><code>//------------------------文件系统初始化相关函数---------------------------------------
 
 /*
@@ -750,7 +880,6 @@ int32_t file_read(struct file *file, void *buf, uint32_t count);
 <h2 id="fs-file-c-file-create"><a href="#fs-file-c-file-create" class="headerlink" title="fs&#x2F;file.c&#x2F;file_create()"></a>fs&#x2F;file.c&#x2F;file_create()</h2><p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img8.png" alt="img"></p>
 <h2 id="fs-file-c-file-write"><a href="#fs-file-c-file-write" class="headerlink" title="fs&#x2F;file.c&#x2F;file_write()"></a>fs&#x2F;file.c&#x2F;file_write()</h2><p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img9.png" alt="img"></p>
 <h2 id="fs-file-c-file-read"><a href="#fs-file-c-file-read" class="headerlink" title="fs&#x2F;file.c&#x2F;file_read()"></a>fs&#x2F;file.c&#x2F;file_read()</h2><p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img10.png" alt="img"></p>
-<h1 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h1><h2 id="inode、super-block、目录、目录项、超级块与文件系统布局"><a href="#inode、super-block、目录、目录项、超级块与文件系统布局" class="headerlink" title="inode、super_block、目录、目录项、超级块与文件系统布局"></a>inode、super_block、目录、目录项、超级块与文件系统布局</h2><h2 id="硬盘驱动"><a href="#硬盘驱动" class="headerlink" title="硬盘驱动"></a>硬盘驱动</h2><h1 id="工具图表"><a href="#工具图表" class="headerlink" title="工具图表"></a>工具图表</h1><h2 id="文件系统布局"><a href="#文件系统布局" class="headerlink" title="文件系统布局"></a>文件系统布局</h2><p><img src="/img/SimpleOS-7-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/img1.png" alt="img"></p>
 
     </div>
 
